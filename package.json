@@ -1,0 +1,68 @@
+{
+  "name": "visionkit-mcp",
+  "version": "1.5.0",
+  "description": "Multi-model vision understanding MCP server with specialized tools (UI-to-code, OCR, error diagnosis, diagram, chart, UI diff). Forked from luma-mcp.",
+  "type": "module",
+  "files": [
+    "build/",
+    "package.json",
+    "README.md",
+    "NOTICE"
+  ],
+  "bin": {
+    "visionkit-mcp": "build/index.js"
+  },
+  "main": "./build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepare": "npm run build",
+    "configure": "tsx src/configure-cli.ts",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test:unit": "vitest run",
+    "test:local": "tsx test/test-local.ts"
+  },
+  "keywords": [
+    "mcp",
+    "vision",
+    "ai",
+    "glm-4.6v",
+    "zhipu",
+    "deepseek-ocr",
+    "siliconflow",
+    "qwen3-vl",
+    "aliyun",
+    "dashscope",
+    "doubao",
+    "volcengine",
+    "ark",
+    "ocr",
+    "free",
+    "image-understanding",
+    "multi-model",
+    "visionkit",
+    "specialized-tools"
+  ],
+  "author": "jinyu",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jinyu/visionkit-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jinyu/visionkit-mcp/issues"
+  },
+  "homepage": "https://github.com/jinyu/visionkit-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.4",
+    "axios": "^1.15.1",
+    "sharp": "^0.33.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.10"
+  }
+}

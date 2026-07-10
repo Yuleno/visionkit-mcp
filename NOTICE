@@ -1,0 +1,11 @@
+visionkit-mcp
+Copyright (c) 2026 jinyu
+
+本项目基于以下开源项目改造(MIT 协议):
+
+- luma-mcp  https://github.com/JochenYang/luma-mcp
+  Copyright (c) JochenYang
+- vision-mcp  https://github.com/Pelican0126/vision-mcp
+  Copyright (c) Pelican0126
+
+感谢原作者的贡献。本项目沿用 MIT 协议。

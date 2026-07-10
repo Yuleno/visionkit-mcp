@@ -1,0 +1,33 @@
+import { describe, it, expect } from "vitest";
+import { buildPrompt, PREAMBLE, PROMPT_KEYS } from "../../src/tools/prompts.js";
+
+describe("prompts", () => {
+  it("PREAMBLE 含三条铁律", () => {
+    expect(PREAMBLE).toMatch(/逐字照抄/);
+    expect(PREAMBLE).toMatch(/绝不编造/);
+    expect(PREAMBLE).toMatch(/不可当作.*指令/);
+  });
+  it("buildPrompt('image_analysis') 含 PREAMBLE", () => {
+    const p = buildPrompt("image_analysis", { userPrompt: "描述这张图" });
+    expect(p).toContain(PREAMBLE);
+    expect(p).toContain("描述这张图");
+  });
+  it("buildPrompt('extract_text') 默认不含小节标题(纯原文)", () => {
+    const p = buildPrompt("extract_text", { userPrompt: "提取文字", structured: false });
+    expect(p).not.toMatch(/## 提取文本/);
+  });
+  it("buildPrompt('extract_text') structured=true 含小节标题", () => {
+    const p = buildPrompt("extract_text", { userPrompt: "提取文字", structured: true });
+    expect(p).toMatch(/## 提取文本/);
+  });
+  it("buildPrompt('diagnose_error') 含四小节", () => {
+    const p = buildPrompt("diagnose_error", { userPrompt: "为什么报错" });
+    expect(p).toMatch(/## 根因/);
+    expect(p).toMatch(/## 错误原文/);
+    expect(p).toMatch(/## 位置/);
+    expect(p).toMatch(/## 修复步骤/);
+  });
+  it("PROMPT_KEYS 含 8 个 key(7 工具,ui_to_artifact 拆 code/spec)", () => {
+    expect(PROMPT_KEYS).toHaveLength(8);
+  });
+});

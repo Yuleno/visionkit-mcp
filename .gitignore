@@ -1,0 +1,25 @@
+# 依赖
+node_modules/
+
+# 构建产物
+build/
+
+# 日志
+*.log
+.visionkit-mcp/
+
+# 系统/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 环境/密钥
+.env
+.env.local
+
+# 临时
+*.tmp
+
+# 本地图片验证
+imageTest/
