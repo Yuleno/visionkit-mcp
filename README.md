@@ -1,19 +1,19 @@
 # VisionKit MCP
 
-多模型视觉理解 MCP 服务器,为不支持原生视觉能力的 AI 助手提供统一的图片分析能力(后续期次将扩展专项工具集:UI 转代码、OCR、报错诊断、技术图理解、数据可视化、UI 对比)。
+多模型视觉理解 MCP 服务器，为不支持原生视觉能力的 AI 助手提供统一的图片分析能力，内置 UI 转代码、OCR、报错诊断、技术图理解、数据可视化和 UI 对比等专项工具。
 
 > **本项目基于 [luma-mcp](https://github.com/JochenYang/luma-mcp)(JochenYang)与 [vision-mcp](https://github.com/Pelican0126/vision-mcp)(Pelican0126)改造,MIT 协议。** 详见 [NOTICE](./NOTICE)。
 
-## 当前进度(期1)
+## 当前进度
 
-期1 已完成:仓库初始化、LumaConfig→VisionKitConfig 改名、vitest 测试骨架、安全逻辑(isPrivateIP + 路径校验)抽取与回归测试。
+期1（仓库初始化与安全基线）和期2（7 个专项视觉工具）均已完成。当前 10 个测试文件、62 个单元测试全绿，7 个 MCP 工具已使用 custom provider（mimo-v2.5）完成真实调用验收。
 
-后续期次(专项工具集、Provider 重构、Agentic Zoom、视频)开发中（设计文档待补充）。
+下一阶段是期3设计与规划：Provider 重构、能力 profile 和 security 抽离。Agentic Zoom 与视频增强分别留到后续可选期次。
 
 ## 特性
 
 - 多模型支持：GLM-4.6V、DeepSeek-OCR、Qwen3-VL-Flash、Doubao-Seed-1.6、Hunyuan-Vision-1.5
-- 单工具设计：统一通过 `image_understand` 完成图片理解
+- 7 个专项工具：通用分析、OCR、报错诊断、技术图、数据图、UI 转换和 UI 对比
 - 面向复杂截图优化：支持大图多裁剪、文本密集场景保真处理
 - 统一预处理链路：本地文件、远程 URL、Data URI 都进入同一套处理流程
 - 适用场景完整：代码截图、UI 截图、报错截图、文档截图、OCR
@@ -24,13 +24,13 @@
 
 ### 前置要求
 
-- Node.js >= 18
+- Node.js >= 22.12（推荐使用当前 LTS）
 - 任意一个模型提供商的 API Key
 
 ### 安装
 
 ```bash
-git clone https://github.com/jinyu/visionkit-mcp.git
+git clone https://github.com/MasterSapphireStar/visionkit-mcp.git
 cd visionkit-mcp
 npm install
 npm run build

@@ -1,8 +1,8 @@
 # visionkit-mcp 交接文档（给下一个 AI）
 
 > **先读这个文件。** 这是项目的入口，读完就能上手。深入信息见文末「文档索引」。
-> 工作目录：`E:\MyProjects\visionkit-mcp\`
-> 最近更新：2026-07-09，期1 + 期2 已完成
+> 工作目录：`E:\Workspace\03-visionkit-mcp\`
+> 最近更新：2026-07-11，期1 + 期2及真实 MCP 验收已完成
 
 ---
 
@@ -16,19 +16,20 @@
 
 ## 2. 当前进度（一句话）
 
-**期1（仓库初始化 + 安全基线）和期2（专项工具层）已完成并实测通过。** 现在是一个能跑的、有 7 个专项视觉工具的 MCP 服务器。期3-5 待做。
+**期1（仓库初始化 + 安全基线）和期2（专项工具层）已完成并实测通过。** 7 个专项工具已使用 custom provider（mimo-v2.5）逐个真实调用成功。当前可进入期3设计与规划，期3-5尚未实现。
 
 ### 实测验证状态（期2 验收）
 - `npm run typecheck` → 0 errors
 - `npm run build` → 0 errors
-- `npm run test:unit` → **59/59 全绿**（9 个测试文件）
+- `npm run test:unit` → **62/62 全绿**（10 个测试文件）
 - MCP tools/list（用 SDK client 实测）→ **返回 7 个工具**，无 image_understand/video
 - 端到端：用 `npm run configure` 配的 mimo-v2.5 profile 跑 `test:local` 成功
+- 真实 MCP callTool：7 个工具全部成功；OCR、报错、图表、技术图、UI 生成和双图对比输出均符合契约
 
 ## 3. 快速上手命令
 
 ```powershell
-cd E:\MyProjects\visionkit-mcp
+cd E:\Workspace\03-visionkit-mcp
 
 # 构建/检查
 npm run typecheck      # tsc 类型检查
@@ -99,7 +100,7 @@ visionkit-mcp/
 
 ## 6. 重要约束（必须遵守）
 
-- **不提交 git、不推远程**：用户环境文件被加密，git 没用。Codex 建了本地 git 仓库但只本地。
+- **GitHub 已启用**：仓库为 `MasterSapphireStar/visionkit-mcp`；除非用户明确要求，不主动 push 或创建远程 PR。
 - **Shell 用 PowerShell**（Windows 11）。改文件优先用 Edit/Write 工具，别用 PowerShell 字符串替换破坏 JSON。
 - **归属不能动**：README 和 NOTICE 里的 luma-mcp(JochenYang)、vision-mcp(Pelican0126) 链接是出处声明，保留。
 - **MIT 协议**。
