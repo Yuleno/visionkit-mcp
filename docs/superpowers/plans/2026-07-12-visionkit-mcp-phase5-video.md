@@ -14,3 +14,4 @@
 - mimo-v2.5单次真实调用正确识别红→绿→蓝时间线。
 - `video_analysis` structuredContent 返回 `detailProfile=video`、`rounds=1`及抽帧warning。
 - 16个测试文件、128个用例通过；typecheck与build通过。
+- GitHub Actions Node 22矩阵在Ubuntu和Windows均通过。
