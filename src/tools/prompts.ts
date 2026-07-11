@@ -12,6 +12,7 @@ export type PromptKey =
   | "understand_technical_diagram"
   | "analyze_data_visualization"
   | "ui_diff_check"
+  | "video_analysis"
   | "image_analysis";
 
 export const PROMPT_KEYS: PromptKey[] = [
@@ -22,6 +23,7 @@ export const PROMPT_KEYS: PromptKey[] = [
   "understand_technical_diagram",
   "analyze_data_visualization",
   "ui_diff_check",
+  "video_analysis",
   "image_analysis",
 ];
 
@@ -53,6 +55,8 @@ export function buildPrompt(key: PromptKey, args: PromptArgs): string {
       return section(`任务:分析数据可视化。请按以下格式输出:\n## 图表类型\n<类型>\n\n## 数据(表格化)\n<数据表>\n\n## 洞察\n<趋势/异常/要点>\n\n用户要求:\n${user}`);
     case "ui_diff_check":
       return section(`任务:对比两张 UI 截图的差异。图1为期望/参考,图2为实际实现。请按以下格式输出:\n## 差异清单\n<每条:位置 + 期望 + 实际>\n\n## 影响\n<影响评估>\n\n用户要求:\n${user}`);
+    case "video_analysis":
+      return section(`任务:根据按时间顺序抽取的视频帧分析视频。不得把单帧推测成未观察到的连续动作。请按以下格式输出:\n## 视频概述\n<主题与场景>\n\n## 时间线\n<按提供的时间戳描述关键变化>\n\n## 关键细节\n<文字、对象、状态变化>\n\n## 不确定性\n<抽帧无法确认的内容>\n\n用户要求:\n${user}`);
     case "ui_to_artifact_code":
       return section(`任务:将 UI 截图转换为前端代码。请按以下格式输出:\n## UI 结构\n<结构说明>\n\n## 代码\n\`\`\`html\n<代码>\n\`\`\`\n\n## 备注\n<假设与说明>\n\n用户要求:\n${user}`);
     case "ui_to_artifact_spec":

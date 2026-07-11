@@ -142,3 +142,32 @@ describe("loadConfig Agentic Zoom", () => {
     expect(() => loadConfig()).toThrow(/首版仅支持/);
   });
 });
+
+describe("loadConfig video limits", () => {
+  function useConfig() {
+    vi.stubEnv("VISIONKIT_CONFIG_FILE", join(tmpdir(), `missing-video-${Date.now()}.json`));
+    vi.stubEnv("MODEL_PROVIDER", "zhipu");
+  }
+
+  it("读取视频限制与FFmpeg路径", () => {
+    useConfig();
+    vi.stubEnv("VISIONKIT_VIDEO_MAX_MB", "80");
+    vi.stubEnv("VISIONKIT_VIDEO_MAX_SECONDS", "90");
+    vi.stubEnv("VISIONKIT_VIDEO_MAX_FRAMES", "4");
+    vi.stubEnv("VISIONKIT_FFMPEG_PATH", "C:/tools/ffmpeg.exe");
+    expect(loadConfig().video).toMatchObject({
+      maxSizeMB: 80, maxDurationSeconds: 90, maxFrames: 4, ffmpegPath: "C:/tools/ffmpeg.exe",
+    });
+  });
+
+  it.each([
+    ["VISIONKIT_VIDEO_MAX_MB", "101"],
+    ["VISIONKIT_VIDEO_MAX_SECONDS", "121"],
+    ["VISIONKIT_VIDEO_MAX_FRAMES", "1"],
+    ["VISIONKIT_VIDEO_MAX_FRAMES", "6"],
+  ])("拒绝超过硬上限的视频配置 %s=%s", (name, value) => {
+    useConfig();
+    vi.stubEnv(name, value);
+    expect(() => loadConfig()).toThrow();
+  });
+});

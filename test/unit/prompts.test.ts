@@ -27,7 +27,12 @@ describe("prompts", () => {
     expect(p).toMatch(/## 位置/);
     expect(p).toMatch(/## 修复步骤/);
   });
-  it("PROMPT_KEYS 含 8 个 key(7 工具,ui_to_artifact 拆 code/spec)", () => {
-    expect(PROMPT_KEYS).toHaveLength(8);
+  it("PROMPT_KEYS 含 9 个 key(8 工具,ui_to_artifact 拆 code/spec)", () => {
+    expect(PROMPT_KEYS).toHaveLength(9);
+  });
+  it("video prompt 要求时间线和不确定性", () => {
+    const p = buildPrompt("video_analysis", { userPrompt: "分析变化" });
+    expect(p).toMatch(/## 时间线/);
+    expect(p).toMatch(/## 不确定性/);
   });
 });

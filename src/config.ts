@@ -42,6 +42,13 @@ export interface VisionKitConfig {
   customProvider?: CustomProviderConfig;
   capabilityOverrides?: CapabilityOverrides;
   agenticZoom?: { enabled: boolean; maxZoomRounds: 1 };
+  video?: {
+    maxSizeMB: number;
+    maxDurationSeconds: number;
+    maxFrames: number;
+    ffmpegPath?: string;
+    ffprobePath?: string;
+  };
 }
 
 export interface CapabilityOverrides {
@@ -67,6 +74,14 @@ const CapabilityOverridesSchema = z.object({
 const AgenticZoomSchema = z.object({
   enabled: EnvBoolean.default("false"),
   maxZoomRounds: z.coerce.number().int().refine(value => value === 1, "首版仅支持 1 轮 Zoom").default(1),
+});
+
+const VideoConfigSchema = z.object({
+  maxSizeMB: z.coerce.number().positive().max(100).default(100),
+  maxDurationSeconds: z.coerce.number().positive().max(120).default(120),
+  maxFrames: z.coerce.number().int().min(2).max(5).default(5),
+  ffmpegPath: z.string().min(1).optional(),
+  ffprobePath: z.string().min(1).optional(),
 });
 
 function loadCapabilityOverrides(env: NodeJS.ProcessEnv): CapabilityOverrides {
@@ -95,6 +110,13 @@ export function loadConfig(): VisionKitConfig {
     enabled: process.env.VISIONKIT_ENABLE_AGENTIC_ZOOM,
     maxZoomRounds: process.env.VISIONKIT_MAX_ZOOM_ROUNDS,
   }) as { enabled: boolean; maxZoomRounds: 1 };
+  const video = VideoConfigSchema.parse({
+    maxSizeMB: process.env.VISIONKIT_VIDEO_MAX_MB,
+    maxDurationSeconds: process.env.VISIONKIT_VIDEO_MAX_SECONDS,
+    maxFrames: process.env.VISIONKIT_VIDEO_MAX_FRAMES,
+    ffmpegPath: process.env.VISIONKIT_FFMPEG_PATH,
+    ffprobePath: process.env.VISIONKIT_FFPROBE_PATH,
+  });
 
   // 确定模型提供商
   const provider = (process.env.MODEL_PROVIDER?.toLowerCase() ||
@@ -187,5 +209,6 @@ export function loadConfig(): VisionKitConfig {
     customProvider,
     capabilityOverrides,
     agenticZoom,
+    video,
   };
 }

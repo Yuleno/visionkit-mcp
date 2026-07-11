@@ -6,12 +6,12 @@
 
 ## 当前进度
 
-期1至期3已完成，期4 Agentic Zoom 核心实现默认关闭、待真实效果对照；7 个 MCP 工具已通过 mimo-v2.5 期3真实回归。当前状态统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
+期1至期4.1已完成，期5首版新增本地视频均匀抽帧分析；mimo-v2.5 已真实验收图片、Agentic Zoom链路与视频分析。当前状态统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
 
 ## 特性
 
 - 多模型支持：GLM-4.6V、DeepSeek-OCR、Qwen3-VL-Flash、Doubao-Seed-1.6、Hunyuan-Vision-1.5
-- 7 个专项工具：通用分析、OCR、报错诊断、技术图、数据图、UI 转换和 UI 对比
+- 8 个专项工具：通用分析、OCR、报错诊断、技术图、数据图、UI 转换、UI 对比和视频分析
 - 面向复杂截图优化：支持大图多裁剪、文本密集场景保真处理
 - 统一预处理链路：本地文件、远程 URL、Data URI 都进入同一套处理流程
 - 适用场景完整：代码截图、UI 截图、报错截图、文档截图、OCR
@@ -174,7 +174,7 @@ claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=hunyuan --env HUNYUAN_
 
 ## 使用方式
 
-### `image_understand`
+### `image_analysis`
 
 参数：
 
@@ -184,17 +184,17 @@ claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=hunyuan --env HUNYUAN_
 示例：
 
 ```typescript
-image_understand({
+image_analysis({
   image_source: "./screenshot.png",
   prompt: "分析这个页面的布局和主要组件结构",
 });
 
-image_understand({
+image_analysis({
   image_source: "./code-error.png",
   prompt: "这段代码为什么报错？请给出修复建议",
 });
 
-image_understand({
+image_analysis({
   image_source: "https://example.com/ui.png",
   prompt: "找出这个界面的可用性问题",
 });
@@ -205,6 +205,7 @@ image_understand({
 - 非视觉模型需要明确提示调用 MCP 工具
 - 代码截图、OCR、长图、表格这类文本密集图片会自动启用更保真的处理方式
 - 大图会按配置自动生成原图加裁剪图，提高细节理解能力
+- `video_analysis` 需要 FFmpeg/ffprobe，当前仅接受本地 mp4/webm/mov/mkv，且只在模型支持至少2张图片时注册
 
 ## 环境变量
 
@@ -224,6 +225,11 @@ image_understand({
 | `VISIONKIT_GROUNDING` | `false` | 覆盖模型是否支持 grounding（`true`/`false`/`1`/`0`） |
 | `VISIONKIT_ENABLE_AGENTIC_ZOOM` | `false` | 为 OCR、UI 转换、图表和技术图显式启用动态局部放大 |
 | `VISIONKIT_MAX_ZOOM_ROUNDS` | `1` | Zoom 轮次；首版仅接受 `1` |
+| `VISIONKIT_VIDEO_MAX_MB` | `100` | 视频大小上限，最大只能设为100MB |
+| `VISIONKIT_VIDEO_MAX_SECONDS` | `120` | 视频时长上限，最大只能设为120秒 |
+| `VISIONKIT_VIDEO_MAX_FRAMES` | `5` | 均匀抽帧数，范围2～5且不超过模型图片上限 |
+| `VISIONKIT_FFMPEG_PATH` | PATH 中的 `ffmpeg` | FFmpeg 可执行文件路径 |
+| `VISIONKIT_FFPROBE_PATH` | PATH 中的 `ffprobe` | ffprobe 可执行文件路径 |
 
 > 未经验证的 provider/model 默认按单图、`merge_user` 处理；已在本项目完成真实验收的 custom `mimo-v2.5` 默认允许最多 5 图。能力覆盖只描述模型能力，不包含密钥；连接信息仍保存在 connection profile 中。
 
@@ -257,7 +263,22 @@ npm run test:local https://example.com/image.jpg
 
 # 检查源码和测试脚本类型
 npm run typecheck
+
+# 已配置 mimo-v2.5 和 FFmpeg 时执行视频真实验收
+npm run test:phase5-mimo ./.visionkit-mcp/phase5-video-smoke.mp4
 ```
+
+### 视频分析依赖
+
+`video_analysis` 不在 npm 包中捆绑 FFmpeg。请先安装并确认以下命令可用：
+
+```powershell
+winget install --id Gyan.FFmpeg --exact
+ffmpeg -version
+ffprobe -version
+```
+
+安装后若当前终端尚未刷新 PATH，可重新打开终端，或使用 `VISIONKIT_FFMPEG_PATH` 与 `VISIONKIT_FFPROBE_PATH` 指定完整路径。视频会先在本机均匀抽帧，只有抽取出的 JPEG 帧会发送给视觉模型。
 
 ## 图片与处理限制
 
@@ -265,6 +286,7 @@ npm run typecheck
 - 最大输入大小：10MB
 - 超过 2MB 的图片会自动压缩
 - 远程 URL 会先拉取到统一预处理链路，再发送给模型
+- 视频仅支持本地文件：mp4、webm、mov、mkv；默认最大100MB、120秒、5帧
 
 ## 项目结构
 
@@ -275,6 +297,7 @@ visionkit-mcp/
 │   ├── config.ts             # 配置管理
 │   ├── providers/            # BaseVisionClient、能力 profile、provider 注册表与薄子类
 │   ├── image-processor.ts    # 图片预处理与裁剪
+│   ├── media/video-frames.ts # 本地视频校验、ffprobe 与均匀抽帧
 │   ├── media/security.ts     # SSRF 与本地路径安全边界
 │   └── utils/
 │       ├── helpers.ts

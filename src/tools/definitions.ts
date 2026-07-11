@@ -126,4 +126,17 @@ export const TOOL_DEFS: ToolDef[] = [
     detailProfile: "balanced",
     requiredCapabilities: { minImages: 2 },
   },
+  {
+    name: "video_analysis",
+    description: "分析本地短视频。通过 FFmpeg 均匀抽取时间帧，输出视频概述、时间线、关键细节与不确定性。",
+    inputShape: {
+      video_source: z.string().describe("本地 mp4/webm/mov/mkv 文件路径"),
+      prompt: z.string().min(1).describe("希望从视频中分析什么"),
+    },
+    outputShape,
+    promptKey: "video_analysis",
+    media: "video",
+    detailProfile: "balanced",
+    requiredCapabilities: { minImages: 2 },
+  },
 ];

@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import { TOOL_DEFS } from "../../src/tools/definitions.js";
 
 describe("TOOL_DEFS", () => {
-  it("恰好 7 个工具(不含 video)", () => {
-    expect(TOOL_DEFS).toHaveLength(7);
-    expect(TOOL_DEFS.find(t => t.name === "video_analysis")).toBeUndefined();
+  it("期5包含第8个 video_analysis 工具", () => {
+    expect(TOOL_DEFS).toHaveLength(8);
+    expect(TOOL_DEFS.find(t => t.name === "video_analysis")).toMatchObject({
+      media: "video", requiredCapabilities: { minImages: 2 },
+    });
   });
   it("含 image_analysis 通用兜底", () => {
     expect(TOOL_DEFS.find(t => t.name === "image_analysis")).toBeDefined();

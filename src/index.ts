@@ -16,6 +16,7 @@ import { loadConfig } from "./config.js";
 import { createClient } from "./providers/registry.js";
 import { TOOL_DEFS } from "./tools/definitions.js";
 import { makeHandler } from "./tools/handler.js";
+import { makeVideoHandler } from "./tools/video-handler.js";
 
 /**
  * 创建 MCP 服务器
@@ -74,7 +75,9 @@ async function createServer() {
       def.name,
       def.description,
       def.inputShape,
-      makeHandler(def, visionClient, config, capabilities) as never
+      (def.media === "video"
+        ? makeVideoHandler(visionClient, config, capabilities.maxImages)
+        : makeHandler(def, visionClient, config, capabilities)) as never
     );
   }
 
