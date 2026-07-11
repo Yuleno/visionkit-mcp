@@ -16,7 +16,7 @@
 
 - `npm run typecheck`：通过。
 - `npm run build`：通过。
-- `npm run test:unit`：14个测试文件、117个用例通过（新增一次媒体加载、Zoom 网格/预算/降级/重试契约）。
+- `npm run test:unit`：14个测试文件、118个用例通过（新增一次媒体加载、Zoom 网格/预算/降级/重试及空 capability override 回归契约）。
 - 期3实现后 `npm run typecheck`、`npm run build` 均通过。
 - `npm run test:local`：mimo-v2.5 + 5图多裁剪端到端调用成功。
 - MCP `tools/list`：返回7个工具，不包含已移除的 `image_understand` 和尚未实现的 video 工具。
@@ -25,6 +25,8 @@
 - `npm pack --dry-run`：通过；发布包只包含 NOTICE、README、package.json 与 build 产物，不包含测试、开发配置或密钥。
 - 最新 build 的 MCP 启动与 `tools/list` 冒烟通过，完整返回7个工具。
 - 期4真实对照：以 `imageTest/deepswe.png` 调用 OCR 工具，关闭/开启 Zoom 各执行1次。两次均为 `rounds=1`，mimo-v2.5 在开启时直接返回 final，未请求动态裁剪；两份 OCR 结果完整度基本一致。因此继续保持默认关闭，且动态裁剪分支尚不能标记为 live 验收完成。
+- 期4.1动态裁剪验收：自动生成4000×4000合成仪表盘，通过手动验收脚本注入右下角 `(2,2)` 决策，真实执行 LoadedMedia→3×3裁剪→mimo-v2.5 最终调用；返回正确验证码 `VK7Q-29MX-4P8R`、`rounds=2`，动态裁剪与最终调用链 live 通过。该结果不代表自动规划器一定会主动选择 Zoom。
+- 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
 
 ## 当前运行约定
 
@@ -49,8 +51,8 @@
 
 ## 下一步
 
-1. 若要完成动态裁剪分支 live 验收，准备一张固定预处理仍不足以读取目标细节的合成测试图，再经用户确认后执行一次针对性对照。
-2. 当前保持 Zoom 默认关闭，不把首次结果相近的对照作为默认开启依据。
+1. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，但自动规划器在何时选择 Zoom 仍需更多样本评估。
+2. 进入期5前优先补 GitHub Actions CI，再为 video_analysis 单独设计依赖、抽帧与安全预算。
 3. 五家内置 provider 的 live probe 继续作为发布前兼容性矩阵，不阻塞期4核心开发；完成前不得提升其保守默认值。
 
 ## 文档入口

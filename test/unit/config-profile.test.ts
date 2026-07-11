@@ -4,6 +4,7 @@ import { tmpdir } from "os";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../../src/config.js";
 import { createCustomProfileConfig } from "../../src/profile-config.js";
+import { createClient } from "../../src/providers/registry.js";
 
 const originalEnv = { ...process.env };
 let tempDir: string | undefined;
@@ -46,6 +47,7 @@ describe("loadConfig with profile config file", () => {
       authHeader: "custom",
       authHeaderValue: "api-key: {{key}}",
     });
+    expect(createClient(config).capabilities.maxImages).toBe(5);
   });
 
   it("does not let a custom profile model override an explicit built-in provider", () => {
@@ -95,6 +97,13 @@ describe("loadConfig capability overrides", () => {
       grounding: false,
       systemPromptMode: "native",
     });
+  });
+
+  it("未设置 override 时返回空对象，不用 undefined 覆盖能力 profile", () => {
+    useMissingConfigFile();
+    const config = loadConfig();
+    expect(config.capabilityOverrides).toEqual({});
+    expect(Object.keys(config.capabilityOverrides ?? {})).toEqual([]);
   });
 
   it.each([

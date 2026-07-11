@@ -70,13 +70,16 @@ const AgenticZoomSchema = z.object({
 });
 
 function loadCapabilityOverrides(env: NodeJS.ProcessEnv): CapabilityOverrides {
-  return CapabilityOverridesSchema.parse({
+  const parsed = CapabilityOverridesSchema.parse({
     maxImages: env.VISIONKIT_MAX_IMAGES,
     nativeVideo: env.VISIONKIT_NATIVE_VIDEO,
     toolCalling: env.VISIONKIT_TOOL_CALLING,
     grounding: env.VISIONKIT_GROUNDING,
     systemPromptMode: env.VISIONKIT_SYSTEM_PROMPT_MODE,
   });
+  return Object.fromEntries(
+    Object.entries(parsed).filter(([, value]) => value !== undefined)
+  ) as CapabilityOverrides;
 }
 
 /**

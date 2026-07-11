@@ -1,6 +1,6 @@
 # VisionKit MCP 期4实施计划：Agentic Zoom
 
-> 状态：核心实现与自动验证完成；mimo-v2.5 首次开关对照完成，动态裁剪 live 分支尚未触发。
+> 状态：核心实现、自动验证、首次开关对照及期4.1动态裁剪 live 链路验收完成。
 
 ## 任务 1：媒体加载边界
 
@@ -44,3 +44,11 @@
 - 两次均返回 `rounds=1`；开启后模型直接选择 final，没有产生动态裁剪和第二次调用。
 - 两份 OCR 结果完整度基本一致，warning 均仅为 custom provider 忽略 thinking。
 - 结论：保持默认关闭；本次证明开关路径可真实运行，但不作为动态裁剪分支 live 验收证据。
+
+## 期4.1动态裁剪验收
+
+- 自动生成4000×4000合成仪表盘，真实值为 `VK7Q-29MX-4P8R`。
+- 手动验收模式只在脚本中注入 `(2,2)` Zoom 决策，生产执行、裁剪与 Provider 调用保持真实。
+- mimo-v2.5 最终收到总览与右下角裁剪，返回正确值，structuredContent 为 `rounds=2`。
+- 同期发现并修复空 capability override 覆盖 profile 的问题，mimo-v2.5 `maxImages` 恢复为5。
+- 验收边界：动态裁剪链路 live 通过；自动规划器的主动触发质量仍需更多样本，Zoom 继续默认关闭。
