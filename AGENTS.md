@@ -2,6 +2,13 @@
 
 本文件记录 `visionkit-mcp` 的本地协作约定。只放项目特有规则，不重复说明通用编码习惯。
 
+## 项目入口
+
+- 当前状态与下一步：`docs/STATUS.md`（唯一事实源）。
+- 文档导航：`docs/README.md`。
+- 安装、配置和使用：`README.md`。
+- 开始开发前先读本文件和 `docs/STATUS.md`；涉及具体期次时，再读对应的设计与实施计划。
+
 ## 工作语言
 
 - 与用户沟通默认使用中文。
@@ -18,19 +25,14 @@
 
 ## 当前阶段
 
-- 期1已完成：项目初始化、命名迁移、基础测试、安全逻辑抽取与回归测试。
-- `npm run configure` 交互式 custom provider 配置功能已落地并验证，相关文件是 `src/profile-config.ts`、`src/configure-cli.ts`、`src/config.ts`。
-- 期2已完成：MCP 工具从单一 `image_understand` 演进为 7 个专项工具，入口为 `src/tools/definitions.ts`、`src/tools/handler.ts`、`src/tools/prompts.ts`。
-- 期2仍沿用当前 `VisionClient.analyzeImage(imageData, prompt, enableThinking) => string` 接口；provider 新接口与能力 profile 重构留到期3。
-- 期2真实 MCP 验收已完成：7 个工具均通过 custom provider（mimo-v2.5）实际调用，单测为 10 个测试文件、62 个用例全绿。
+- 期1、期2及7个工具的真实 MCP 验收已完成。
 - 当前处于期3设计与规划前；期3尚未开始，不应直接修改 provider 大接口。
-- 2026-07-11 完成开发期配置调整：连接 profile 和日志统一写入项目内 `.visionkit-mcp/`，不创建用户主目录下的同名目录。
+- 详细验收结果、已知问题和下一步只维护在 `docs/STATUS.md`。
 
 ## 路径提醒
 
 - 当前仓库路径：`E:\Workspace\03-visionkit-mcp`。
-- 期1、期2计划及总设计均已位于当前仓库的 `docs/superpowers/`。
-- `docs/README_EN.md` 来自绿盾加密环境，当前仍是不可读二进制文件；未确认可恢复性前不要覆盖或删除。
+- 当前仍生效的总设计位于 `docs/superpowers/specs/`；已完成的期1、期2计划和配置调整文档位于 `docs/archive/`。
 
 ## 开发边界
 

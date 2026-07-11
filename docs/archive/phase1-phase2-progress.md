@@ -1,16 +1,7 @@
-# visionkit-mcp 进度账本
+# visionkit-mcp 期1、期2历史进度
 
-> 当前仓库：`E:/Workspace/03-visionkit-mcp/`
-> GitHub：`MasterSapphireStar/visionkit-mcp`
-> 最近更新：2026-07-11
-
-## 当前状态
-
-- 期1：complete（仓库初始化、命名迁移、测试骨架、安全基线）。
-- 期2：complete（7 个专项工具、双策略、专项 prompts、structuredContent）。
-- 期2真实验收：complete（7 个工具均通过 mimo-v2.5 实际 callTool；10 个测试文件、62 个用例全绿）。
-- 开发配置调整：complete（配置与日志统一写入项目内 `.visionkit-mcp/`）。
-- 下一步：期3设计与规划；Provider 重构、能力 profile 与 security 抽离尚未开始。
+> 本文件是期1、期2的历史实施流水，不再维护当前状态。
+> 当前状态、验收结果和下一步请查看 `docs/STATUS.md`。
 
 ## 期1完成记录
 
