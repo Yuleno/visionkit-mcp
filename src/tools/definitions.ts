@@ -18,6 +18,7 @@ export interface ToolDef {
   detailProfile: DetailProfile;
   thinkingPolicy?: "on" | "off" | "profile_default";
   requiredCapabilities?: CapabilityRequirements;
+  zoomPolicy?: "disabled" | "candidate";
 }
 
 const outputShape: ZodRawShape = {
@@ -54,6 +55,7 @@ export const TOOL_DEFS: ToolDef[] = [
     promptKey: "extract_text",
     media: "image",
     detailProfile: "text",
+    zoomPolicy: "candidate",
   },
   {
     name: "diagnose_error_screenshot",
@@ -80,6 +82,7 @@ export const TOOL_DEFS: ToolDef[] = [
     promptKey: "understand_technical_diagram",
     media: "image",
     detailProfile: "balanced",
+    zoomPolicy: "candidate",
   },
   {
     name: "analyze_data_visualization",
@@ -93,6 +96,7 @@ export const TOOL_DEFS: ToolDef[] = [
     promptKey: "analyze_data_visualization",
     media: "image",
     detailProfile: "balanced",
+    zoomPolicy: "candidate",
   },
   {
     name: "ui_to_artifact",
@@ -106,6 +110,7 @@ export const TOOL_DEFS: ToolDef[] = [
     promptKey: "ui_to_artifact_code", // handler 按 output_type 切换
     media: "image",
     detailProfile: "balanced",
+    zoomPolicy: "candidate",
   },
   {
     name: "ui_diff_check",

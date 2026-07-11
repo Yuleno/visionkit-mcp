@@ -41,6 +41,7 @@ export interface VisionKitConfig {
   baseVisionPrompt?: string;
   customProvider?: CustomProviderConfig;
   capabilityOverrides?: CapabilityOverrides;
+  agenticZoom?: { enabled: boolean; maxZoomRounds: 1 };
 }
 
 export interface CapabilityOverrides {
@@ -63,6 +64,11 @@ const CapabilityOverridesSchema = z.object({
   systemPromptMode: z.enum(["native", "merge_user"]).optional(),
 });
 
+const AgenticZoomSchema = z.object({
+  enabled: EnvBoolean.default("false"),
+  maxZoomRounds: z.coerce.number().int().refine(value => value === 1, "首版仅支持 1 轮 Zoom").default(1),
+});
+
 function loadCapabilityOverrides(env: NodeJS.ProcessEnv): CapabilityOverrides {
   return CapabilityOverridesSchema.parse({
     maxImages: env.VISIONKIT_MAX_IMAGES,
@@ -82,6 +88,10 @@ export function loadConfig(): VisionKitConfig {
     process.env,
     readUserConfig(process.env.VISIONKIT_CONFIG_FILE)
   );
+  const agenticZoom = AgenticZoomSchema.parse({
+    enabled: process.env.VISIONKIT_ENABLE_AGENTIC_ZOOM,
+    maxZoomRounds: process.env.VISIONKIT_MAX_ZOOM_ROUNDS,
+  }) as { enabled: boolean; maxZoomRounds: 1 };
 
   // 确定模型提供商
   const provider = (process.env.MODEL_PROVIDER?.toLowerCase() ||
@@ -173,5 +183,6 @@ export function loadConfig(): VisionKitConfig {
     baseVisionPrompt: process.env.BASE_VISION_PROMPT,
     customProvider,
     capabilityOverrides,
+    agenticZoom,
   };
 }

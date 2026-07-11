@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-期1、期2和期3核心实现均已完成，7 个 MCP 工具已通过 mimo-v2.5 真实回归；五家内置 provider 在完成 live probe 前保持保守能力配置。当前开发状态、验证结果和下一步统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
+期1至期3已完成，期4 Agentic Zoom 核心实现默认关闭、待真实效果对照；7 个 MCP 工具已通过 mimo-v2.5 期3真实回归。当前状态统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
 
 ## 特性
 
@@ -222,6 +222,8 @@ image_understand({
 | `VISIONKIT_NATIVE_VIDEO` | `false` | 覆盖模型是否原生支持视频（`true`/`false`/`1`/`0`） |
 | `VISIONKIT_TOOL_CALLING` | `false` | 覆盖模型是否支持 tool calling（`true`/`false`/`1`/`0`） |
 | `VISIONKIT_GROUNDING` | `false` | 覆盖模型是否支持 grounding（`true`/`false`/`1`/`0`） |
+| `VISIONKIT_ENABLE_AGENTIC_ZOOM` | `false` | 为 OCR、UI 转换、图表和技术图显式启用动态局部放大 |
+| `VISIONKIT_MAX_ZOOM_ROUNDS` | `1` | Zoom 轮次；首版仅接受 `1` |
 
 > 未经验证的 provider/model 默认按单图、`merge_user` 处理；已在本项目完成真实验收的 custom `mimo-v2.5` 默认允许最多 5 图。能力覆盖只描述模型能力，不包含密钥；连接信息仍保存在 connection profile 中。
 

@@ -1,7 +1,7 @@
 # VisionKit MCP 当前状态
 
 > 当前状态的唯一事实源。阶段、验收结果、已知问题或下一步发生变化时，只更新本文件。
-> 最近更新：2026-07-11。
+> 最近更新：2026-07-12。
 
 ## 当前阶段
 
@@ -10,12 +10,13 @@
 - 期2真实 MCP 验收完成：7个工具均通过 custom provider（mimo-v2.5）实际调用。
 - 期3核心实现及 custom provider（mimo-v2.5）真实回归完成：统一 Provider 架构、capability profile、安全模块与日志脱敏已落地。
 - 期3的五家内置 provider live probe 尚未执行（当前无对应凭据），因此尚未满足其发布门槛；不能宣称这些模型的多图与 thinking payload 已真实验证。
+- 期4 Agentic Zoom 核心实现完成，默认关闭；自动化验证及 mimo-v2.5 首次开关对照已完成。
 
 ## 已验证状态
 
 - `npm run typecheck`：通过。
 - `npm run build`：通过。
-- `npm run test:unit`：12个测试文件、105个用例通过（含完整 Provider fake transport、capability override、错误脱敏、跨平台路径以及远程图片 SSRF 契约测试）。
+- `npm run test:unit`：14个测试文件、117个用例通过（新增一次媒体加载、Zoom 网格/预算/降级/重试契约）。
 - 期3实现后 `npm run typecheck`、`npm run build` 均通过。
 - `npm run test:local`：mimo-v2.5 + 5图多裁剪端到端调用成功。
 - MCP `tools/list`：返回7个工具，不包含已移除的 `image_understand` 和尚未实现的 video 工具。
@@ -23,6 +24,7 @@
 - 期3真实回归：通过 `npm run test:phase3-mimo` 启动重构后的 MCP server，以 mimo-v2.5 逐个调用上述 7 个工具全部成功；`ui_diff_check` 的双图请求成功。
 - `npm pack --dry-run`：通过；发布包只包含 NOTICE、README、package.json 与 build 产物，不包含测试、开发配置或密钥。
 - 最新 build 的 MCP 启动与 `tools/list` 冒烟通过，完整返回7个工具。
+- 期4真实对照：以 `imageTest/deepswe.png` 调用 OCR 工具，关闭/开启 Zoom 各执行1次。两次均为 `rounds=1`，mimo-v2.5 在开启时直接返回 final，未请求动态裁剪；两份 OCR 结果完整度基本一致。因此继续保持默认关闭，且动态裁剪分支尚不能标记为 live 验收完成。
 
 ## 当前运行约定
 
@@ -47,8 +49,9 @@
 
 ## 下一步
 
-1. 获取五家内置 provider 中任意可用凭据后，逐家执行默认模型的 live probe，补齐 `CAPABILITY_PROFILES` 的 `maxImages`、system prompt 和 thinking 验证；完成前不得提升其保守默认值。
-2. 完成上述验证后，归档期3设计与计划，再评估是否启动期4 Agentic Zoom；不提前实现期4、期5内容。
+1. 若要完成动态裁剪分支 live 验收，准备一张固定预处理仍不足以读取目标细节的合成测试图，再经用户确认后执行一次针对性对照。
+2. 当前保持 Zoom 默认关闭，不把首次结果相近的对照作为默认开启依据。
+3. 五家内置 provider 的 live probe 继续作为发布前兼容性矩阵，不阻塞期4核心开发；完成前不得提升其保守默认值。
 
 ## 文档入口
 

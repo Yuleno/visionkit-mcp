@@ -7,8 +7,9 @@ import {
   toPreparationProfile,
   type MediaItem,
 } from "../media/detail-strategy.js";
-import { SinglePassExecution } from "./execution-strategy.js";
-import { validateImageSource } from "../image-processor.js";
+import { AgenticZoomExecution, SinglePassExecution } from "./execution-strategy.js";
+import { DefaultMediaLoader } from "../media/load-media.js";
+import type { MediaLoader } from "../media/load-media.js";
 import {
   withRetry,
   createStructuredSuccessResponse,
@@ -20,20 +21,21 @@ export function makeHandler(
   def: ToolDef,
   client: VisionClient,
   config: VisionKitConfig,
-  capabilities: Pick<Capabilities, "maxImages">
+  capabilities: Pick<Capabilities, "maxImages">,
+  dependencies: { mediaLoader?: MediaLoader } = {}
 ) {
   const preparation = new FixedMultiCropPreparation();
-  const execution = new SinglePassExecution();
+  const mediaLoader = dependencies.mediaLoader ?? new DefaultMediaLoader();
+  const zoomEnabled = config.agenticZoom?.enabled === true && def.zoomPolicy === "candidate" && capabilities.maxImages >= 2;
+  const execution = zoomEnabled ? new AgenticZoomExecution() : new SinglePassExecution();
 
   return async (params: Record<string, unknown>) => {
     try {
       // 1. 构造 MediaItem
       const items: MediaItem[] = buildMediaItems(def, params);
 
-      // 2. 校验图片来源
-      for (const it of items) {
-        await validateImageSource(it.source);
-      }
+      // 2. 一次安全加载，固定预处理与 Zoom 共用同一 buffer
+      const media = await mediaLoader.load(items);
 
       // 3. 解析 detailProfile(auto → 正则命中 text, 否则 infer)
       const userPrompt = (params.prompt as string) || "";
@@ -43,6 +45,7 @@ export function makeHandler(
       // 4. 预处理
       const prepOut = await preparation.prepare({
         items,
+        media,
         profile: prepProfile,
         maxImages: capabilities.maxImages,
       });
@@ -56,20 +59,19 @@ export function makeHandler(
 
       // 6. 执行(只重试模型调用)
       const thinking = resolveThinking(def, config);
-      const execResult = await withRetry(
-        () =>
-          execution.execute({
+      const execute = () => execution.execute({
             images: prepOut.images,
             systemPrompt,
             userPrompt,
             thinking,
             client,
             rawItems: items,
+            media,
+            maxImages: capabilities.maxImages,
             preparationWarnings: prepOut.warnings,
-          }),
-        2,
-        1000
-      )();
+          });
+      // Agentic 策略内部按 HTTP attempt 记账，禁止包裹整个多轮流程重试。
+      const execResult = zoomEnabled ? await execute() : await withRetry(execute, 2, 1000)();
 
       // 7. 双输出
       return createStructuredSuccessResponse({

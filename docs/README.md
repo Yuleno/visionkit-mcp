@@ -22,6 +22,8 @@
 - 总设计：`docs/superpowers/specs/2026-07-09-visionkit-mcp-design.md`。
 - 期3专项设计：`docs/superpowers/specs/2026-07-11-visionkit-mcp-phase3-design.md`。
 - 期3实施计划：`docs/superpowers/plans/2026-07-11-visionkit-mcp-phase3.md`。
+- 期4专项设计：`docs/superpowers/specs/2026-07-12-visionkit-mcp-phase4-agentic-zoom-design.md`。
+- 期4实施计划：`docs/superpowers/plans/2026-07-12-visionkit-mcp-phase4-agentic-zoom.md`。
 - 当前状态：`docs/STATUS.md`。
 - 已完成文档索引：`docs/archive/README.md`。
 

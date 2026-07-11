@@ -1,5 +1,6 @@
-import { prepareVisionImageInput, imageToBase64WithOptions } from "../image-processor.js";
+import { processBufferVariants, encodeLoadedOverview } from "../image-processor.js";
 import { TEXT_HEAVY_PROMPT_PATTERN } from "../constants.js";
+import type { LoadedMedia } from "./load-media.js";
 
 export type DetailProfile = "text" | "balanced" | "overview" | "auto";
 export type PreparationProfile = "text" | "balanced" | "overview" | "infer";
@@ -19,6 +20,7 @@ export interface PreparedImage {
 
 export interface PreparationInput {
   items: readonly MediaItem[];
+  media: readonly LoadedMedia[];
   profile: PreparationProfile;
   maxImages: number;
 }
@@ -74,21 +76,26 @@ export class FixedMultiCropPreparation implements ImagePreparationStrategy {
     const warnings: string[] = [];
     const profiles: ResolvedDetailProfile[] = [];
 
+    if (input.media.length !== input.items.length) {
+      throw new Error("内部不变量失败: LoadedMedia 与 MediaItem 数量不一致");
+    }
+
     for (let idx = 0; idx < input.items.length; idx++) {
       const item = input.items[idx];
+      const media = input.media[idx];
       const preferText = preferTextForProfile(input.profile);
 
       if (input.profile === "overview") {
         // 单图不裁剪
-        const dataUrl = await imageToBase64WithOptions(item.source, { preferText: false });
+        const dataUrl = await encodeLoadedOverview(media.buffer, media.mimeType, false);
         images.push({ dataUrl, role: item.role, view: "overview", sourceIndex: idx });
         profiles.push("balanced");
       } else {
-        const prepared = await prepareVisionImageInput(item.source, {
+        const prepared = await processBufferVariants(media.buffer, media.mimeType, {
           preferText,
           maxTiles: this.budgetFor(input, idx),
         });
-        const arr = Array.isArray(prepared.imageData) ? prepared.imageData : [prepared.imageData];
+        const arr = prepared.variants;
         arr.forEach((dataUrl, i) => {
           images.push({
             dataUrl,
@@ -97,7 +104,7 @@ export class FixedMultiCropPreparation implements ImagePreparationStrategy {
             sourceIndex: idx,
           });
         });
-        if (prepared.imageHint) promptHints.push(`[${item.role}] ${prepared.imageHint}`);
+        if (arr.length > 1) promptHints.push(`[${item.role}] image 1 is the overview; remaining images are detail crops.`);
         profiles.push(resolvedFromPreferText(prepared.preferTextUsed));
       }
     }

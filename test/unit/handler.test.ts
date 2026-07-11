@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import path from "path";
+import { readFileSync } from "fs";
 import { makeHandler } from "../../src/tools/handler.js";
 import { TOOL_DEFS } from "../../src/tools/definitions.js";
 import type { VisionClient } from "../../src/vision-client.js";
@@ -30,6 +31,29 @@ const baseConfig: any = {
 };
 
 describe("makeHandler", () => {
+  it("Agentic Zoom 候选工具只加载一次媒体并可直接完成", async () => {
+    const def = TOOL_DEFS.find((t) => t.name === "extract_text_from_screenshot")!;
+    const client = fakeClient();
+    (client.analyze as any).mockResolvedValue({ text: '{"action":"final","answer":"提取结果"}' });
+    const mediaLoader = {
+      load: vi.fn(async () => [{
+        buffer: readFileSync(fixture), mimeType: "image/png", width: 1, height: 1,
+        role: "primary" as const, sourceIndex: 0,
+      }]),
+    };
+    const handler = makeHandler(
+      def,
+      client,
+      { ...baseConfig, agenticZoom: { enabled: true, maxZoomRounds: 1 } },
+      { maxImages: 5 },
+      { mediaLoader }
+    );
+    const res: any = await handler({ image_source: "virtual.png", prompt: "提取" });
+    expect(mediaLoader.load).toHaveBeenCalledTimes(1);
+    expect(res.structuredContent.text).toBe("提取结果");
+    expect(res.structuredContent.rounds).toBe(1);
+  });
+
   it("image_analysis 工具调通并返回 structuredContent", async () => {
     const def = TOOL_DEFS.find((t) => t.name === "image_analysis")!;
     const client = fakeClient();

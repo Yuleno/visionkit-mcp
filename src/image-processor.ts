@@ -270,14 +270,18 @@ export async function fetchRemoteImage(
  * 读取本地或远程图片二进制数据
  */
 async function loadImageBuffer(
-  imageSource: string
+  imageSource: string,
+  maxSizeMB: number = 10
 ): Promise<{ buffer: Buffer; mimeType: string }> {
   if (isDataUri(imageSource)) {
+    if (estimateBytesFromDataUri(imageSource) > maxSizeMB * 1024 * 1024) {
+      throw new Error(`Image file too large (max: ${maxSizeMB}MB)`);
+    }
     return decodeDataUri(imageSource);
   }
 
   if (isUrl(imageSource)) {
-    return fetchRemoteImage(imageSource);
+    return fetchRemoteImage(imageSource, maxSizeMB);
   }
 
   // 路径遍历防护：将用户路径解析为绝对路径并校验是否在允许的范围内
@@ -300,9 +304,41 @@ async function loadImageBuffer(
 
   assertPathInAllowedDirs(realPath, allowedDirs);
 
+  const stats = await stat(realPath);
+  if (stats.size > maxSizeMB * 1024 * 1024) {
+    throw new Error(`Image file too large: ${(stats.size / 1024 / 1024).toFixed(2)}MB (max: ${maxSizeMB}MB)`);
+  }
   const buffer = await readFile(realPath);
   const mimeType = ensureSupportedMimeType(getMimeType(imageSource));
   return { buffer, mimeType };
+}
+
+export interface ValidatedImageBuffer {
+  buffer: Buffer;
+  mimeType: string;
+  width: number;
+  height: number;
+}
+
+/** 一次读取并完成格式、大小与像素校验，供期4 LoadedMedia 复用。 */
+export async function loadValidatedImageBuffer(
+  imageSource: string,
+  maxSizeMB: number = 10
+): Promise<ValidatedImageBuffer> {
+  const normalizedSource = normalizeImageSourcePath(imageSource);
+  const loaded = await loadImageBuffer(normalizedSource, maxSizeMB);
+  const maxBytes = maxSizeMB * 1024 * 1024;
+  if (loaded.buffer.length > maxBytes) {
+    throw new Error(`Image file too large: ${(loaded.buffer.length / 1024 / 1024).toFixed(2)}MB (max: ${maxSizeMB}MB)`);
+  }
+  const metadata = await sharp(loaded.buffer).metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (!width || !height) throw new Error("Invalid image dimensions");
+  await checkImageResolution(loaded.buffer);
+  const detectedMime = metadata.format === "jpeg" ? "image/jpeg" : `image/${metadata.format}`;
+  ensureSupportedMimeType(detectedMime);
+  return { buffer: loaded.buffer, mimeType: detectedMime, width, height };
 }
 
 /**
@@ -476,59 +512,7 @@ async function processImageVariants(
     const normalizedPath = normalizeImageSourcePath(imagePath);
     const { buffer: imageBuffer, mimeType } = await loadImageBuffer(normalizedPath);
 
-    await checkImageResolution(imageBuffer);
-
-    if (mimeType === "image/gif") {
-      const full = await encodeBufferToDataUrl(
-        imageBuffer,
-        mimeType,
-        options?.preferText
-      );
-      // gif 的文本优先推断恒为 false（见 inferTextHeavyFromImage）
-      return { variants: [full], preferTextUsed: options?.preferText ?? false };
-    }
-
-    const metadata = await sharp(imageBuffer).metadata();
-    const width = metadata.width ?? 0;
-    const height = metadata.height ?? 0;
-    const preferText = await resolvePreferTextMode(
-      imageBuffer,
-      mimeType,
-      options?.preferText
-    );
-
-    if (!width || !height) {
-      const full = await encodeBufferToDataUrl(imageBuffer, mimeType, preferText);
-      return { variants: [full], preferTextUsed: preferText };
-    }
-
-    const shouldSplit =
-      Math.max(width, height) >= CROP_MIN_DIMENSION || width * height >= CROP_MIN_PIXEL_COUNT;
-
-    const full = await encodeBufferToDataUrl(imageBuffer, mimeType, preferText);
-
-    if (!shouldSplit) {
-      return { variants: [full], preferTextUsed: preferText };
-    }
-
-    const cropRegions = buildCropRegions(
-      width,
-      height,
-      Math.max(1, options?.maxTiles ?? 5)
-    );
-
-    if (cropRegions.length === 0) {
-      return { variants: [full], preferTextUsed: preferText };
-    }
-
-    const tiles = await Promise.all(
-      cropRegions.map(async (region) => {
-        const tileBuffer = await sharp(imageBuffer).extract(region).toBuffer();
-        return encodeBufferToDataUrl(tileBuffer, mimeType, preferText);
-      })
-    );
-
-    return { variants: [full, ...tiles], preferTextUsed: preferText };
+    return processBufferVariants(imageBuffer, mimeType, options);
   } catch (error) {
     throw new Error(
       `Failed to process image: ${
@@ -536,6 +520,48 @@ async function processImageVariants(
       }`
     );
   }
+}
+
+export async function processBufferVariants(
+  imageBuffer: Buffer,
+  mimeType: string,
+  options?: { preferText?: boolean; maxTiles?: number }
+): Promise<{ variants: string[]; preferTextUsed: boolean }> {
+  await checkImageResolution(imageBuffer);
+  if (mimeType === "image/gif") {
+    const full = await encodeBufferToDataUrl(imageBuffer, mimeType, options?.preferText);
+    return { variants: [full], preferTextUsed: options?.preferText ?? false };
+  }
+  const metadata = await sharp(imageBuffer).metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  const preferText = await resolvePreferTextMode(imageBuffer, mimeType, options?.preferText);
+  const full = await encodeBufferToDataUrl(imageBuffer, mimeType, preferText);
+  if (!width || !height) return { variants: [full], preferTextUsed: preferText };
+  const shouldSplit = Math.max(width, height) >= CROP_MIN_DIMENSION || width * height >= CROP_MIN_PIXEL_COUNT;
+  if (!shouldSplit) return { variants: [full], preferTextUsed: preferText };
+  const regions = buildCropRegions(width, height, Math.max(1, options?.maxTiles ?? 5));
+  const tiles = await Promise.all(regions.map(async region => {
+    const tileBuffer = await sharp(imageBuffer).extract(region).toBuffer();
+    return encodeBufferToDataUrl(tileBuffer, mimeType, preferText);
+  }));
+  return { variants: [full, ...tiles], preferTextUsed: preferText };
+}
+
+export async function encodeLoadedOverview(
+  imageBuffer: Buffer,
+  mimeType: string,
+  preferText?: boolean
+): Promise<string> {
+  return encodeBufferToDataUrl(imageBuffer, mimeType, preferText);
+}
+
+export async function cropLoadedImage(
+  imageBuffer: Buffer,
+  region: { left: number; top: number; width: number; height: number }
+): Promise<string> {
+  const output = await sharp(imageBuffer).extract(region).png().toBuffer();
+  return encodeBufferToDataUrl(output, "image/png", true);
 }
 
 /**

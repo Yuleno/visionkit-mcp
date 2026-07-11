@@ -21,7 +21,8 @@
     "typecheck": "tsc -p tsconfig.check.json",
     "test:unit": "vitest run",
     "test:local": "tsx test/test-local.ts",
-    "test:phase3-mimo": "npm run build && tsx test/manual/phase3-mimo-mcp.ts"
+    "test:phase3-mimo": "npm run build && tsx test/manual/phase3-mimo-mcp.ts",
+    "test:phase4-mimo": "npm run build && tsx test/manual/phase4-mimo-zoom-compare.ts"
   },
   "keywords": [
     "mcp",

@@ -109,3 +109,27 @@ describe("loadConfig capability overrides", () => {
     expect(() => loadConfig()).toThrow();
   });
 });
+
+describe("loadConfig Agentic Zoom", () => {
+  it("默认关闭，显式 true 时启用", () => {
+    vi.stubEnv("VISIONKIT_CONFIG_FILE", join(tmpdir(), `missing-${Date.now()}.json`));
+    vi.stubEnv("MODEL_PROVIDER", "zhipu");
+    expect(loadConfig().agenticZoom).toEqual({ enabled: false, maxZoomRounds: 1 });
+    vi.stubEnv("VISIONKIT_ENABLE_AGENTIC_ZOOM", "true");
+    expect(loadConfig().agenticZoom).toEqual({ enabled: true, maxZoomRounds: 1 });
+  });
+
+  it.each(["yes", "TRUE"])("拒绝非法 Zoom 开关 %s", value => {
+    vi.stubEnv("VISIONKIT_CONFIG_FILE", join(tmpdir(), `missing-${Date.now()}.json`));
+    vi.stubEnv("MODEL_PROVIDER", "zhipu");
+    vi.stubEnv("VISIONKIT_ENABLE_AGENTIC_ZOOM", value);
+    expect(() => loadConfig()).toThrow();
+  });
+
+  it("首版拒绝超过一轮 Zoom", () => {
+    vi.stubEnv("VISIONKIT_CONFIG_FILE", join(tmpdir(), `missing-${Date.now()}.json`));
+    vi.stubEnv("MODEL_PROVIDER", "zhipu");
+    vi.stubEnv("VISIONKIT_MAX_ZOOM_ROUNDS", "2");
+    expect(() => loadConfig()).toThrow(/首版仅支持/);
+  });
+});

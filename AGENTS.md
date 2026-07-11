@@ -27,6 +27,7 @@
 
 - 期1、期2及7个工具的真实 MCP 验收已完成。
 - 期3核心实现和 mimo-v2.5 的7工具真实回归已完成；五家内置 provider live probe 因缺少凭据尚未执行，能力保持保守默认值。
+- 期4 Agentic Zoom 核心实现完成、默认关闭；mimo-v2.5 首次开关对照已完成，但动态裁剪 live 分支尚未触发。
 - 不把未完成 live probe 的内置模型标记为多图或 thinking 已真实验证。
 - 详细验收结果、已知问题和下一步只维护在 `docs/STATUS.md`。
 
@@ -40,7 +41,7 @@
 - 修改时优先保持现有 TypeScript ESM 风格和模块边界。
 - Provider 层已统一为 `BaseVisionClient` + 六个薄子类；继续修改时必须保持 `connectionProfile` 与 `capabilityProfile` 分离。
 - 五家内置 provider 的能力 profile 只能在取得文档与 live probe 证据后提升，不凭猜测放宽 `maxImages` 或 system/thinking 行为。
-- 不提前实现期4、期5内容，除非用户明确要求。
+- 不提前实现期5内容，除非用户明确要求。
 - `image-processor.ts` 是关键路径，涉及图片读取、压缩、多裁剪、缓存和安全校验；改动必须小心并配测试。
 
 ## 常用命令
@@ -51,6 +52,7 @@ npm run build
 npm run test:unit
 npm run test:local <image-path-or-url> [question]
 npm run test:phase3-mimo
+npm run test:phase4-mimo [image-path]
 npm run configure
 ```
 
@@ -59,6 +61,7 @@ npm run configure
 - `npm run test:unit` 运行 vitest 单元测试。
 - `npm run test:local` 会调用真实模型，需要可用 API key。
 - `npm run test:phase3-mimo` 会先 build，再用 mimo-v2.5 真实调用7个 MCP 工具，会产生 API 消耗。
+- `npm run test:phase4-mimo` 会将同一图片发送给 mimo-v2.5，执行 Agentic Zoom 关闭/开启对照，会产生 API 消耗。
 - `npm run configure` 会写入项目根目录 `.visionkit-mcp/config.json`，日志写入 `.visionkit-mcp/logs/`；整个目录已被 Git 忽略。
 - 配置文件包含 API key，不能提交；不要把 `npm run configure` 当作普通验证命令主动运行，除非用户明确要求配置模型。
 - `VISIONKIT_CONFIG_FILE` 可覆盖默认连接 profile 路径。
