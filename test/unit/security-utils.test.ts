@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isPrivateIP, assertPathInAllowedDirs } from "../../src/media/security-utils.js";
+import { isPrivateIP, assertPathInAllowedDirs } from "../../src/media/security.js";
 
 describe("isPrivateIP", () => {
   // IPv4 私有段（锁住 luma 现有行为）
@@ -90,5 +90,12 @@ describe("assertPathInAllowedDirs", () => {
   });
   it("前缀伪造不通过（如 /home/meevil）", () => {
     expect(() => assertPathInAllowedDirs("/home/meevil/x", nixAllowed)).toThrow();
+  });
+  it("Windows 同级路径前缀伪造不通过", () => {
+    expect(() => assertPathInAllowedDirs("C:\\Users\\me-evil\\x.png", winAllowed)).toThrow();
+  });
+
+  it("POSIX 路径大小写敏感，不把不同目录视为同一路径", () => {
+    expect(() => assertPathInAllowedDirs("/Home/me/img.png", ["/home/me/"])).toThrow();
   });
 });

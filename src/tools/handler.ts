@@ -1,5 +1,5 @@
 import type { ToolDef } from "./definitions.js";
-import type { VisionClient } from "../vision-client.js";
+import type { Capabilities, VisionClient } from "../vision-client.js";
 import type { VisionKitConfig } from "../config.js";
 import { buildPrompt } from "./prompts.js";
 import {
@@ -16,16 +16,11 @@ import {
 } from "../utils/helpers.js";
 import { TEXT_HEAVY_PROMPT_PATTERN } from "../constants.js";
 
-// 期2 临时 capabilities 类型(期3 spec 第4节会正式定义 Capabilities)
-export interface Phase2Capabilities {
-  maxImages: number;
-}
-
 export function makeHandler(
   def: ToolDef,
   client: VisionClient,
   config: VisionKitConfig,
-  capabilities: Phase2Capabilities
+  capabilities: Pick<Capabilities, "maxImages">
 ) {
   const preparation = new FixedMultiCropPreparation();
   const execution = new SinglePassExecution();

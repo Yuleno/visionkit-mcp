@@ -70,3 +70,42 @@ describe("loadConfig with profile config file", () => {
     expect(config.customProvider).toBeUndefined();
   });
 });
+
+describe("loadConfig capability overrides", () => {
+  function useMissingConfigFile() {
+    vi.stubEnv(
+      "VISIONKIT_CONFIG_FILE",
+      join(tmpdir(), `visionkit-missing-${Date.now()}-${Math.random()}.json`)
+    );
+    vi.stubEnv("MODEL_PROVIDER", "zhipu");
+  }
+
+  it("解析全部 capability override，并正确处理 false/0", () => {
+    useMissingConfigFile();
+    vi.stubEnv("VISIONKIT_MAX_IMAGES", "7");
+    vi.stubEnv("VISIONKIT_NATIVE_VIDEO", "false");
+    vi.stubEnv("VISIONKIT_TOOL_CALLING", "1");
+    vi.stubEnv("VISIONKIT_GROUNDING", "0");
+    vi.stubEnv("VISIONKIT_SYSTEM_PROMPT_MODE", "native");
+
+    expect(loadConfig().capabilityOverrides).toEqual({
+      maxImages: 7,
+      nativeVideo: false,
+      toolCalling: true,
+      grounding: false,
+      systemPromptMode: "native",
+    });
+  });
+
+  it.each([
+    ["VISIONKIT_MAX_IMAGES", "0"],
+    ["VISIONKIT_MAX_IMAGES", "1.5"],
+    ["VISIONKIT_NATIVE_VIDEO", "yes"],
+    ["VISIONKIT_SYSTEM_PROMPT_MODE", "unsupported"],
+  ])("拒绝非法 capability override %s=%s", (name, value) => {
+    useMissingConfigFile();
+    vi.stubEnv(name, value);
+
+    expect(() => loadConfig()).toThrow();
+  });
+});

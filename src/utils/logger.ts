@@ -7,6 +7,33 @@ import { mkdirSync } from 'fs';
 import { appendFile } from 'fs/promises';
 import { join } from 'path';
 
+const SENSITIVE_KEY_PATTERN = /(api[-_]?key|authorization|token|secret|password)/i;
+
+export function redactSensitiveText(value: string): string {
+  return value
+    .replace(/data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]+/gi, "data:image/[REDACTED]")
+    .replace(/(Authorization\s*[:=]\s*)(?:Bearer|Basic)\s+[^\s,;}]+/gi, "$1[REDACTED]")
+    .replace(/(Bearer\s+)[^\s,;}]+/gi, "$1[REDACTED]")
+    .replace(
+      /(["']?(?:api[-_]?key|authorization|token|secret|password)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi,
+      "$1[REDACTED]"
+    );
+}
+
+export function redactLogValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    return redactSensitiveText(value);
+  }
+  if (Array.isArray(value)) return value.map(redactLogValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+      key,
+      SENSITIVE_KEY_PATTERN.test(key) ? "[REDACTED]" : redactLogValue(item),
+    ]));
+  }
+  return value;
+}
+
 export function getDefaultLogDirectory(
   baseDir: string = process.cwd()
 ): string {
@@ -37,7 +64,7 @@ class Logger {
   private async write(level: string, message: string, ...args: any[]): Promise<void> {
     try {
       const timestamp = new Date().toISOString();
-      const argsStr = args.length > 0 ? ` ${JSON.stringify(args)}` : '';
+      const argsStr = args.length > 0 ? ` ${JSON.stringify(redactLogValue(args))}` : '';
       const logMessage = `[${timestamp}] ${level.toUpperCase()}: ${message}${argsStr}`;
 
       // 输出到 stderr

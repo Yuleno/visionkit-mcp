@@ -20,7 +20,8 @@
     "configure": "tsx src/configure-cli.ts",
     "typecheck": "tsc -p tsconfig.check.json",
     "test:unit": "vitest run",
-    "test:local": "tsx test/test-local.ts"
+    "test:local": "tsx test/test-local.ts",
+    "test:phase3-mimo": "npm run build && tsx test/manual/phase3-mimo-mcp.ts"
   },
   "keywords": [
     "mcp",

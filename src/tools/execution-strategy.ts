@@ -32,14 +32,16 @@ export class SinglePassExecution implements VisionExecutionStrategy {
   async execute(input: ExecutionInput): Promise<VisionExecutionResult> {
     const dataUrls = input.images.map(i => i.dataUrl);
     const fullUserPrompt = composePrompt(input.images, input.userPrompt);
-    // 当前 VisionClient.analyzeImage(imageData, prompt, enableThinking) => string
-    // systemPrompt 作为 base 前缀拼进 prompt(期3 接口升级后改走 native system role)
-    const combinedPrompt = `${input.systemPrompt}\n\n${fullUserPrompt}`;
-    const text = await input.client.analyzeImage(dataUrls, combinedPrompt, input.thinking);
+    const result = await input.client.analyze({
+      images: dataUrls,
+      systemPrompt: input.systemPrompt,
+      userPrompt: fullUserPrompt,
+      thinking: input.thinking,
+    });
     return {
-      text,
+      text: result.text,
       rounds: 1,
-      warnings: [...input.preparationWarnings],
+      warnings: [...input.preparationWarnings, ...(result.warnings ?? [])],
     };
   }
 }

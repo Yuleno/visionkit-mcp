@@ -26,18 +26,20 @@
 ## 当前阶段
 
 - 期1、期2及7个工具的真实 MCP 验收已完成。
-- 当前处于期3设计与规划前；期3尚未开始，不应直接修改 provider 大接口。
+- 期3核心实现和 mimo-v2.5 的7工具真实回归已完成；五家内置 provider live probe 因缺少凭据尚未执行，能力保持保守默认值。
+- 不把未完成 live probe 的内置模型标记为多图或 thinking 已真实验证。
 - 详细验收结果、已知问题和下一步只维护在 `docs/STATUS.md`。
 
 ## 路径提醒
 
 - 当前仓库路径：`E:\Workspace\03-visionkit-mcp`。
-- 当前仍生效的总设计位于 `docs/superpowers/specs/`；已完成的期1、期2计划和配置调整文档位于 `docs/archive/`。
+- 当前仍生效的总设计和期3专项设计位于 `docs/superpowers/specs/`，期3实施计划位于 `docs/superpowers/plans/`；已完成的期1、期2及配置调整文档位于 `docs/archive/`。
 
 ## 开发边界
 
 - 修改时优先保持现有 TypeScript ESM 风格和模块边界。
-- 期3开工前先基于现有总设计补充期3设计和实施计划，尤其明确 `connectionProfile` 与 `capabilityProfile`。
+- Provider 层已统一为 `BaseVisionClient` + 六个薄子类；继续修改时必须保持 `connectionProfile` 与 `capabilityProfile` 分离。
+- 五家内置 provider 的能力 profile 只能在取得文档与 live probe 证据后提升，不凭猜测放宽 `maxImages` 或 system/thinking 行为。
 - 不提前实现期4、期5内容，除非用户明确要求。
 - `image-processor.ts` 是关键路径，涉及图片读取、压缩、多裁剪、缓存和安全校验；改动必须小心并配测试。
 
@@ -48,6 +50,7 @@ npm run typecheck
 npm run build
 npm run test:unit
 npm run test:local <image-path-or-url> [question]
+npm run test:phase3-mimo
 npm run configure
 ```
 
@@ -55,6 +58,7 @@ npm run configure
 
 - `npm run test:unit` 运行 vitest 单元测试。
 - `npm run test:local` 会调用真实模型，需要可用 API key。
+- `npm run test:phase3-mimo` 会先 build，再用 mimo-v2.5 真实调用7个 MCP 工具，会产生 API 消耗。
 - `npm run configure` 会写入项目根目录 `.visionkit-mcp/config.json`，日志写入 `.visionkit-mcp/logs/`；整个目录已被 Git 忽略。
 - 配置文件包含 API key，不能提交；不要把 `npm run configure` 当作普通验证命令主动运行，除非用户明确要求配置模型。
 - `VISIONKIT_CONFIG_FILE` 可覆盖默认连接 profile 路径。
@@ -69,5 +73,5 @@ npm run configure
 ## 配置概念
 
 - 连接 profile：当前已实现，用于 custom provider 的连接信息，例如 `baseUrl`、`model`、`apiKey`、`authHeader`。
-- 能力 profile：计划在期3引入，用于描述模型能力，例如最大图片数、system prompt 支持方式、thinking 支持等。
-- 后续命名应尽量区分 `connectionProfile` 与 `capabilityProfile`，避免混淆。
+- 能力 profile：期3已实现，代码内 `CAPABILITY_PROFILES` 描述最大图片数、system prompt 方式等模型能力，不保存密钥。
+- 命名保持 `connectionProfile` 与 `capabilityProfile` 两个独立概念，避免混淆。

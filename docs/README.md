@@ -20,9 +20,9 @@
 ## 当前核心资料
 
 - 总设计：`docs/superpowers/specs/2026-07-09-visionkit-mcp-design.md`。
+- 期3专项设计：`docs/superpowers/specs/2026-07-11-visionkit-mcp-phase3-design.md`。
+- 期3实施计划：`docs/superpowers/plans/2026-07-11-visionkit-mcp-phase3.md`。
 - 当前状态：`docs/STATUS.md`。
 - 已完成文档索引：`docs/archive/README.md`。
-
-期3开始后，应新增独立的期3设计与计划，不在期1、期2历史文档中追加当前状态。
 
 历史计划中的代码片段、旧路径或已删除文件名用于还原当时实施背景，不代表当前文档入口；当前信息始终以 `docs/STATUS.md` 为准。

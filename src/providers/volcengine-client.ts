@@ -1,0 +1,16 @@
+import type { VisionKitConfig } from "../config.js";
+import { resolveCapabilities } from "./capabilities.js";
+import { BaseVisionClient, type HttpClientFactory, type TransportConfig } from "./base-client.js";
+
+export class VolcengineClient extends BaseVisionClient {
+  readonly name = "Doubao";
+  constructor(config: VisionKitConfig, httpFactory?: HttpClientFactory) {
+    const transport: TransportConfig = { baseUrl: "https://ark.cn-beijing.volces.com/api/v3", requestPath: "/chat/completions", timeoutMs: 120_000, headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" } };
+    super(config, transport, resolveCapabilities("volcengine", config.model, config.capabilityOverrides), httpFactory);
+  }
+  protected applyThinking(body: Record<string, unknown>, thinking: boolean | undefined): string[] {
+    if (thinking === true) body.thinking = { type: "enabled" };
+    if (thinking === false) body.thinking = { type: "disabled" };
+    return [];
+  }
+}

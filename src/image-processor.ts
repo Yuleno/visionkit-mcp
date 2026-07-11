@@ -3,7 +3,7 @@
  * 读取、验证、压缩并编码图片（本地文件、远程 URL、Data URI）
  */
 
-import axios from "axios";
+import axios, { type AxiosRequestConfig } from "axios";
 import { readFile, stat, realpath } from "fs/promises";
 import { lookup } from "dns/promises";
 import { isIPv6 } from "net";
@@ -14,7 +14,7 @@ import path from "path";
 import sharp from "sharp";
 import { isUrl } from "./utils/helpers.js";
 import { logger } from "./utils/logger.js";
-import { isPrivateIP, assertPathInAllowedDirs } from "./media/security-utils.js";
+import { isPrivateIP, assertPathInAllowedDirs } from "./media/security.js";
 
 const SUPPORTED_MIME_TYPES = [
   "image/jpeg",
@@ -145,9 +145,34 @@ function ensureSupportedMimeType(mimeType: string | null): string {
 /**
  * 拉取远程图片并纳入统一预处理流程
  */
-async function fetchRemoteImage(
+export interface RemoteImageDependencies {
+  lookup(hostname: string): Promise<{ address: string }>;
+  get(
+    url: string,
+    config: AxiosRequestConfig
+  ): Promise<{ data: ArrayBuffer | Buffer; headers: Record<string, unknown> }>;
+  createHttpsAgent(options: { servername: string }): https.Agent;
+}
+
+const DEFAULT_REMOTE_IMAGE_DEPENDENCIES: RemoteImageDependencies = {
+  lookup: async (hostname) => {
+    const result = await lookup(hostname);
+    return { address: result.address };
+  },
+  get: async (url, config) => {
+    const response = await axios.get<ArrayBuffer>(url, config);
+    return {
+      data: response.data,
+      headers: response.headers as Record<string, unknown>,
+    };
+  },
+  createHttpsAgent: (options) => new https.Agent(options),
+};
+
+export async function fetchRemoteImage(
   imageUrl: string,
-  maxSizeMB: number = 10
+  maxSizeMB: number = 10,
+  dependencies: RemoteImageDependencies = DEFAULT_REMOTE_IMAGE_DEPENDENCIES
 ): Promise<{ buffer: Buffer; mimeType: string }> {
   const maxBytes = maxSizeMB * 1024 * 1024;
 
@@ -172,7 +197,7 @@ async function fetchRemoteImage(
   } else {
     // DNS 解析域名到 IP
     try {
-      const dnsResult = await lookup(hostname);
+      const dnsResult = await dependencies.lookup(hostname);
       resolvedIp = dnsResult.address;
     } catch (dnsError) {
       throw new Error(
@@ -199,7 +224,7 @@ async function fetchRemoteImage(
   };
 
   try {
-    const response = await axios.get<ArrayBuffer>(imageUrl, {
+    const response = await dependencies.get(imageUrl, {
       responseType: "arraybuffer",
       timeout: DEFAULT_REMOTE_TIMEOUT_MS,
       maxContentLength: maxBytes,
@@ -207,7 +232,7 @@ async function fetchRemoteImage(
       maxRedirects: 0, // 禁用重定向防 SSRF 绕过
       lookup: lookupFn,
       httpsAgent: isHttps
-        ? new https.Agent({ servername: parsedUrl.hostname })
+        ? dependencies.createHttpsAgent({ servername: parsedUrl.hostname })
         : undefined,
     });
 
@@ -270,7 +295,7 @@ async function loadImageBuffer(
   }
 
   const allowedDirs = [process.cwd(), os.homedir()].map((dir) =>
-    path.normalize(dir).toLowerCase()
+    path.normalize(dir)
   );
 
   assertPathInAllowedDirs(realPath, allowedDirs);

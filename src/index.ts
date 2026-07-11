@@ -13,7 +13,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
 import { runConfigureCli } from "./configure-cli.js";
 import { loadConfig } from "./config.js";
-import { createClient } from "./client-registry.js";
+import { createClient } from "./providers/registry.js";
 import { TOOL_DEFS } from "./tools/definitions.js";
 import { makeHandler } from "./tools/handler.js";
 
@@ -49,10 +49,13 @@ async function createServer() {
     }
   );
 
-  // 数据驱动注册：循环 TOOL_DEFS，按 requiredCapabilities 过滤
-  // ui_diff_check 需 maxImages>=2；multiCrop 关闭时 maxImages=1，该工具自动跳过
+  // 数据驱动注册：按真实 provider/model capabilities 过滤。
+  // multiCrop 关闭时继续收紧为单图，但不把未验证的后端能力放大。
   const capabilities = {
-    maxImages: config.multiCrop ? config.multiCropMaxTiles : 1,
+    ...visionClient.capabilities,
+    maxImages: config.multiCrop
+      ? Math.min(visionClient.capabilities.maxImages, config.multiCropMaxTiles)
+      : 1,
   };
   for (const def of TOOL_DEFS) {
     if (

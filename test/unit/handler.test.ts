@@ -8,12 +8,16 @@ const fixture = path.join(__dirname, "../fixtures/tiny.png");
 
 function fakeClient(capture?: { prompt?: string }): VisionClient {
   return {
-    analyzeImage: vi.fn(
-      async (_imgs: unknown, prompt: string) => {
-        if (capture) capture.prompt = prompt;
-        return "模型返回的分析结果";
+    name: "fake",
+    model: "fake-model",
+    capabilities: { maxImages: 5, nativeVideo: false, toolCalling: false, grounding: false, systemPromptMode: "merge_user" },
+    analyze: vi.fn(
+      async (request) => {
+        if (capture) capture.prompt = `${request.systemPrompt}\n\n${request.userPrompt}`;
+        return { text: "模型返回的分析结果" };
       }
-    ) as any,
+    ),
+    analyzeImage: async () => "模型返回的分析结果",
     getModelName: () => "fake-model",
   };
 }
@@ -101,7 +105,7 @@ describe("makeHandler", () => {
     const res: any = await handler({ image_source: "nonexistent.png", prompt: "描述" });
     expect(res.isError).toBe(true);
     expect(res.structuredContent).toBeUndefined();
-    expect(client.analyzeImage).not.toHaveBeenCalled();
+    expect(client.analyze).not.toHaveBeenCalled();
   });
 
   it("ui_diff_check 双图调通(twoImages media)", async () => {

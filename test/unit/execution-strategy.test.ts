@@ -2,8 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import { SinglePassExecution, composePrompt } from "../../src/tools/execution-strategy.js";
 import type { PreparedImage } from "../../src/media/detail-strategy.js";
 
-function fakeClient(analyzeImage: (imgs: any, prompt: string) => Promise<string>) {
-  return { analyzeImage: vi.fn(analyzeImage) as any, getModelName: () => "fake-model" };
+function fakeClient(analyze: (request: any) => Promise<{ text: string; warnings?: string[] }>) {
+  return {
+    name: "fake", model: "fake-model",
+    capabilities: { maxImages: 5, nativeVideo: false, toolCalling: false, grounding: false, systemPromptMode: "merge_user" as const },
+    analyze: vi.fn(analyze), getModelName: () => "fake-model",
+  };
 }
 
 describe("composePrompt", () => {
@@ -20,8 +24,8 @@ describe("composePrompt", () => {
 });
 
 describe("SinglePassExecution", () => {
-  it("调用 client.analyzeImage 并返回 rounds=1", async () => {
-    const client = fakeClient(async () => "分析结果");
+  it("调用 client.analyze 并返回 rounds=1", async () => {
+    const client = fakeClient(async () => ({ text: "分析结果" }));
     const exec = new SinglePassExecution();
     const imgs: PreparedImage[] = [{ dataUrl: "d1", role: "primary", view: "overview", sourceIndex: 0 }];
     const r = await exec.execute({
@@ -31,10 +35,10 @@ describe("SinglePassExecution", () => {
     expect(r.text).toBe("分析结果");
     expect(r.rounds).toBe(1);
     expect(r.warnings).toEqual(["w1"]);
-    expect(client.analyzeImage).toHaveBeenCalled();
+    expect(client.analyze).toHaveBeenCalled();
   });
   it("合并 provider warnings", async () => {
-    const client = fakeClient(async () => "ok");
+    const client = fakeClient(async () => ({ text: "ok" }));
     const exec = new SinglePassExecution();
     const r = await exec.execute({
       images: [{dataUrl:"d1",role:"primary",view:"overview",sourceIndex:0}],

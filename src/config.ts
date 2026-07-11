@@ -7,6 +7,7 @@ import {
   readUserConfig,
   resolveConfiguredProfile,
 } from "./profile-config.js";
+import { z } from "zod";
 
 export type ModelProvider =
   | "zhipu"
@@ -39,12 +40,44 @@ export interface VisionKitConfig {
   multiCropMaxTiles: number;
   baseVisionPrompt?: string;
   customProvider?: CustomProviderConfig;
+  capabilityOverrides?: CapabilityOverrides;
+}
+
+export interface CapabilityOverrides {
+  maxImages?: number;
+  nativeVideo?: boolean;
+  toolCalling?: boolean;
+  grounding?: boolean;
+  systemPromptMode?: "native" | "merge_user";
+}
+
+const EnvBoolean = z.enum(["true", "false", "1", "0"]).transform(
+  (value) => value === "true" || value === "1"
+);
+
+const CapabilityOverridesSchema = z.object({
+  maxImages: z.coerce.number().int().positive().optional(),
+  nativeVideo: EnvBoolean.optional(),
+  toolCalling: EnvBoolean.optional(),
+  grounding: EnvBoolean.optional(),
+  systemPromptMode: z.enum(["native", "merge_user"]).optional(),
+});
+
+function loadCapabilityOverrides(env: NodeJS.ProcessEnv): CapabilityOverrides {
+  return CapabilityOverridesSchema.parse({
+    maxImages: env.VISIONKIT_MAX_IMAGES,
+    nativeVideo: env.VISIONKIT_NATIVE_VIDEO,
+    toolCalling: env.VISIONKIT_TOOL_CALLING,
+    grounding: env.VISIONKIT_GROUNDING,
+    systemPromptMode: env.VISIONKIT_SYSTEM_PROMPT_MODE,
+  });
 }
 
 /**
  * 从环境变量加载配置
  */
 export function loadConfig(): VisionKitConfig {
+  const capabilityOverrides = loadCapabilityOverrides(process.env);
   const configuredProfile = resolveConfiguredProfile(
     process.env,
     readUserConfig(process.env.VISIONKIT_CONFIG_FILE)
@@ -139,5 +172,6 @@ export function loadConfig(): VisionKitConfig {
     multiCropMaxTiles: parseInt(process.env.MULTI_CROP_MAX_TILES || "5", 10),
     baseVisionPrompt: process.env.BASE_VISION_PROMPT,
     customProvider,
+    capabilityOverrides,
   };
 }

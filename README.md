@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-期1和期2均已完成，7 个 MCP 工具已通过真实调用验收。当前开发状态、验证结果和下一步统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
+期1、期2和期3核心实现均已完成，7 个 MCP 工具已通过 mimo-v2.5 真实回归；五家内置 provider 在完成 live probe 前保持保守能力配置。当前开发状态、验证结果和下一步统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
 
 ## 特性
 
@@ -217,6 +217,13 @@ image_understand({
 | `BASE_VISION_PROMPT` | 内置默认值 | 自定义基础视觉提示词                                                |
 | `MAX_TOKENS`         | `8192`     | 最大生成 token 数（部分模型有硬上限，详见下方说明）                 |
 | `VISIONKIT_CONFIG_FILE` | 项目内 `.visionkit-mcp/config.json` | 自定义连接 profile 配置文件的完整路径                    |
+| `VISIONKIT_MAX_IMAGES` | 按模型能力 profile | 覆盖当前模型最多可接收的图片数（正整数） |
+| `VISIONKIT_SYSTEM_PROMPT_MODE` | 按模型能力 profile | `native` 或 `merge_user`，控制 system prompt 的发送方式 |
+| `VISIONKIT_NATIVE_VIDEO` | `false` | 覆盖模型是否原生支持视频（`true`/`false`/`1`/`0`） |
+| `VISIONKIT_TOOL_CALLING` | `false` | 覆盖模型是否支持 tool calling（`true`/`false`/`1`/`0`） |
+| `VISIONKIT_GROUNDING` | `false` | 覆盖模型是否支持 grounding（`true`/`false`/`1`/`0`） |
+
+> 未经验证的 provider/model 默认按单图、`merge_user` 处理；已在本项目完成真实验收的 custom `mimo-v2.5` 默认允许最多 5 图。能力覆盖只描述模型能力，不包含密钥；连接信息仍保存在 connection profile 中。
 
 > [!IMPORTANT]
 > **关于 Token 限制的特别说明：**
@@ -264,13 +271,9 @@ visionkit-mcp/
 ├── src/
 │   ├── index.ts              # MCP 服务器入口
 │   ├── config.ts             # 配置管理
-│   ├── vision-client.ts      # 视觉模型客户端接口
-│   ├── zhipu-client.ts       # GLM-4.6V 客户端
-│   ├── siliconflow-client.ts # DeepSeek-OCR 客户端
-│   ├── qwen-client.ts        # Qwen3-VL 客户端
-│   ├── volcengine-client.ts  # Doubao-Seed-1.6 客户端
-│   ├── hunyuan-client.ts     # Hunyuan-Vision-1.5 客户端
+│   ├── providers/            # BaseVisionClient、能力 profile、provider 注册表与薄子类
 │   ├── image-processor.ts    # 图片预处理与裁剪
+│   ├── media/security.ts     # SSRF 与本地路径安全边界
 │   └── utils/
 │       ├── helpers.ts
 │       └── logger.ts
