@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { homedir } from "os";
 import { dirname, join } from "path";
 
 export type ProfileProvider = "custom";
@@ -83,8 +82,10 @@ export function createCustomProfileConfig(
   };
 }
 
-export function getDefaultUserConfigPath(): string {
-  return join(homedir(), ".visionkit-mcp", "config.json");
+export function getDefaultUserConfigPath(
+  baseDir: string = process.cwd()
+): string {
+  return join(baseDir, ".visionkit-mcp", "config.json");
 }
 
 export function readUserConfig(

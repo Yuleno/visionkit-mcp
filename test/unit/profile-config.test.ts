@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { join } from "path";
 import {
   createCustomProfileConfig,
+  getDefaultUserConfigPath,
   resolveConfiguredProfile,
 } from "../../src/profile-config.js";
+
+describe("getDefaultUserConfigPath", () => {
+  it("stores development config under the project directory", () => {
+    const projectDir = join("workspace", "visionkit-mcp");
+
+    expect(getDefaultUserConfigPath(projectDir)).toBe(
+      join(projectDir, ".visionkit-mcp", "config.json")
+    );
+  });
+});
 
 describe("createCustomProfileConfig", () => {
   it("uses the model name as the profile name", () => {

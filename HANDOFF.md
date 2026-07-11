@@ -35,7 +35,7 @@ npm run typecheck      # tsc 类型检查
 npm run build          # 编译到 build/
 npm run test:unit      # vitest 跑所有单元测试
 
-# 配置 custom 模型（交互式，写入 ~/.visionkit-mcp/config.json）
+# 配置 custom 模型（交互式，写入项目内 .visionkit-mcp/config.json）
 npm run configure
 
 # 端到端测试（需先 configure 或设环境变量）
@@ -44,6 +44,8 @@ npm run test:local -- <图片路径> "你的问题"
 # MCP 冒烟（看 tools/list 返回什么）
 node -e "const {Client}=require('@modelcontextprotocol/sdk/client/index.js');const {StdioClientTransport}=require('@modelcontextprotocol/sdk/client/stdio.js');(async()=>{const t=new StdioClientTransport({command:'node',args:['build/index.js']});const c=new Client({name:'v',version:'1'},{capabilities:{}});await c.connect(t);const r=await c.listTools();console.log(r.tools.map(x=>x.name).join(', '));await c.close();})()"
 ```
+
+开发期的连接 profile 写入项目内 `.visionkit-mcp/config.json`，日志写入 `.visionkit-mcp/logs/`；整个目录由 `.gitignore` 排除，不会在用户主目录创建 `.visionkit-mcp`。可用 `VISIONKIT_CONFIG_FILE` 覆盖 profile 路径。
 
 **实测过的 provider**：custom（mimo-v2.5，小米 mimo-v2.5，api.xiaomimimo.com，configure 会自动推断 `api-key: {{key}}` 鉴权）。
 
@@ -54,9 +56,9 @@ visionkit-mcp/
 ├── src/
 │   ├── index.ts                  # MCP 入口：加载配置→构造 client→循环注册 7 工具
 │   ├── client-registry.ts        # CLIENT_REGISTRY + createClient 工厂（无副作用模块）
-│   ├── config.ts                 # VisionKitConfig + loadConfig（读 env + ~/.visionkit-mcp/config.json）
+│   ├── config.ts                 # VisionKitConfig + loadConfig（读 env + 项目内 .visionkit-mcp/config.json）
 │   ├── configure-cli.ts          # npm run configure 交互式配置 CLI
-│   ├── profile-config.ts         # 用户 profile 配置读写（~/.visionkit-mcp/config.json）
+│   ├── profile-config.ts         # 开发期 profile 配置读写（项目内 .visionkit-mcp/config.json）
 │   ├── constants.ts              # DEFAULT_BASE_VISION_PROMPT + TEXT_HEAVY_PROMPT_PATTERN
 │   ├── vision-client.ts          # VisionClient 接口（analyzeImage/getModelName）
 │   ├── {zhipu,siliconflow,qwen,volcengine,hunyuan,custom}-client.ts  # 6 个 provider client

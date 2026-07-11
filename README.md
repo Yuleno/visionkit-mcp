@@ -97,13 +97,13 @@ claude mcp add -s user visionkit-mcp \
 - `CUSTOM_THINKING_MODE=disabled` — `disabled` / `openai` / `qwen_extra_body`
 - `CUSTOM_AUTH_HEADER_VALUE="X-API-Key: {{key}}"` — 自定义 Header 模板
 
-也可以用交互式配置命令生成用户级配置：
+开发阶段也可以用交互式配置命令生成项目内配置。请在项目根目录运行：
 
 ```bash
 npm run configure
 ```
 
-命令只会询问三项：API endpoint、Model name、API key。Profile 名自动使用模型名，配置保存到用户目录的 `.visionkit-mcp/config.json`（包含 API key，请不要提交到仓库）。例如小米 MiMo：
+命令只会询问三项：API endpoint、Model name、API key。Profile 名自动使用模型名，配置保存到项目根目录的 `.visionkit-mcp/config.json`。该文件包含 API key，已由 `.gitignore` 排除，请勿提交到仓库。例如小米 MiMo：
 
 ```text
 API endpoint: https://api.xiaomimimo.com/v1
@@ -112,6 +112,10 @@ API key: your-api-key
 ```
 
 VisionKit 会自动识别 `api.xiaomimimo.com` 并使用 `api-key` 鉴权头；其他 OpenAI 兼容端点默认使用 `Authorization: Bearer`。如果只配置了一个 profile，启动 MCP 时无需再传 `CUSTOM_*` 环境变量。
+
+如需把配置保存在其他位置，可通过 `VISIONKIT_CONFIG_FILE` 指定完整路径；该变量的优先级高于项目内默认路径。
+
+开发日志保存在项目根目录的 `.visionkit-mcp/logs/`。配置与日志目录均已由 `.gitignore` 排除，开发阶段不会创建用户主目录下的 `.visionkit-mcp`。
 
 ### 快捷配置命令
 
@@ -214,6 +218,7 @@ image_understand({
 | `MODEL_NAME`         | 自动选择   | 模型名称                                                            |
 | `BASE_VISION_PROMPT` | 内置默认值 | 自定义基础视觉提示词                                                |
 | `MAX_TOKENS`         | `8192`     | 最大生成 token 数（部分模型有硬上限，详见下方说明）                 |
+| `VISIONKIT_CONFIG_FILE` | 项目内 `.visionkit-mcp/config.json` | 自定义连接 profile 配置文件的完整路径                    |
 
 > [!IMPORTANT]
 > **关于 Token 限制的特别说明：**

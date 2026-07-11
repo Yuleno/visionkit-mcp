@@ -10,7 +10,8 @@
 - MCP 服务、`npm run test:local` 与 `npm run configure` 使用同一套默认路径解析逻辑。
 - 保留 `VISIONKIT_CONFIG_FILE`，使显式路径始终拥有最高优先级。
 - 继续通过 `.gitignore` 排除 `.visionkit-mcp/`，避免 API Key 被提交。
-- 不在本次改动中迁移日志目录、引入系统凭据存储或设计发布阶段的用户级配置目录。
+- 开发阶段的日志也写入项目内，保证运行项目时不会创建用户主目录下的 `.visionkit-mcp`。
+- 不在本次改动中引入系统凭据存储或设计发布阶段的用户级配置目录。
 
 ## 路径规则
 
@@ -27,11 +28,19 @@
 1. `VISIONKIT_CONFIG_FILE` 指定的路径。
 2. 当前工作目录下的 `.visionkit-mcp/config.json`。
 
+默认日志目录为：
+
+```text
+<process.cwd()>/.visionkit-mcp/logs
+```
+
 ## 代码边界
 
 `src/profile-config.ts` 继续负责计算默认配置路径、读写配置和解析 profile。默认路径函数改为基于当前工作目录，避免调用方各自拼接路径。
 
 `src/configure-cli.ts` 与 `src/config.ts` 继续复用该函数。除了默认路径变化，不改变 profile 格式、环境变量优先级或 Provider 行为。
+
+`src/utils/logger.ts` 使用当前工作目录计算项目内日志目录，不再调用 `homedir()`。日志文件名和写入失败时降级到 stderr 的行为保持不变。
 
 ## 错误处理与安全
 
@@ -43,9 +52,11 @@
 ## 测试与验证
 
 - 为默认路径增加单元测试，验证它等于 `<cwd>/.visionkit-mcp/config.json`。
+- 为默认日志目录增加单元测试，验证它等于 `<cwd>/.visionkit-mcp/logs`。
 - 保留并运行现有 profile 与环境变量覆盖测试。
 - 运行 `npm run typecheck`、`npm run test:unit` 和 `npm run build`。
 - 不运行真实模型测试，不执行 `npm run configure`，避免生成真实配置或消耗 API。
+- 完整测试不应再尝试创建用户主目录下的 `.visionkit-mcp`。
 
 ## 文档变更
 

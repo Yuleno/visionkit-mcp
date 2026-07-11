@@ -3,10 +3,15 @@
  * 将日志输出到 stderr，避免污染 MCP 的 stdout JSON 通信
  */
 
-import { writeFileSync, mkdirSync } from 'fs';
+import { mkdirSync } from 'fs';
 import { appendFile } from 'fs/promises';
-import { dirname, join } from 'path';
-import { homedir } from 'os';
+import { join } from 'path';
+
+export function getDefaultLogDirectory(
+  baseDir: string = process.cwd()
+): string {
+  return join(baseDir, '.visionkit-mcp', 'logs');
+}
 
 class Logger {
   private logFilePath?: string;
@@ -17,10 +22,9 @@ class Logger {
 
   private initLogFile() {
     try {
-      const homeDir = homedir();
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const logDir = join(homeDir, '.visionkit-mcp');
+      const logDir = getDefaultLogDirectory();
       
       mkdirSync(logDir, { recursive: true });
       this.logFilePath = join(logDir, `visionkit-mcp-${dateStr}.log`);

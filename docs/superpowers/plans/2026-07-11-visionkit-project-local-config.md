@@ -32,7 +32,22 @@
 3. 返回 `<baseDir>/.visionkit-mcp/config.json`。
 4. 运行 `test/unit/profile-config.test.ts`，确认新增测试与现有 profile 测试通过。
 
-## Task 3：同步使用文档
+## Task 3：迁移开发日志目录
+
+**文件：**
+
+- 新增：`test/unit/logger.test.ts`
+- 修改：`src/utils/logger.ts`
+
+**步骤：**
+
+1. 添加默认日志目录测试，断言明确的项目目录会解析到 `<projectDir>/.visionkit-mcp/logs`。
+2. 先运行测试并确认实现缺失导致失败。
+3. 提取可测试的日志目录函数，默认基于 `process.cwd()`。
+4. 让 Logger 使用该函数，不再调用 `homedir()`。
+5. 运行日志测试并确认通过。
+
+## Task 4：同步使用文档
 
 **文件：**
 
@@ -46,8 +61,9 @@
 3. 说明 `VISIONKIT_CONFIG_FILE` 可覆盖默认位置。
 4. 保留配置包含 API Key、不得提交的安全提醒。
 5. 更新交接文档中关于用户目录配置的旧描述。
+6. 说明开发日志写入项目内 `.visionkit-mcp/logs/`。
 
-## Task 4：完整验证
+## Task 5：完整验证
 
 **步骤：**
 
@@ -55,6 +71,6 @@
 2. 运行 `npm run test:unit`。
 3. 运行 `npm run build`。
 4. 运行 `git diff --check`。
-5. 检查 `git status --short`，确认没有生成 `.visionkit-mcp/config.json`，也没有无关文件被修改。
+5. 检查 `git status --short`，确认没有生成 `.visionkit-mcp/config.json`，项目内日志目录被 `.gitignore` 排除，且没有无关文件被修改。
 
 不运行 `npm run configure` 和真实模型测试，避免写入真实 API Key 或产生模型调用费用。
