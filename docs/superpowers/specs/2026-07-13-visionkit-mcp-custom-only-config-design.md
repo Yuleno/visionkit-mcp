@@ -32,7 +32,7 @@
 - **D4 profile-config**：整个删 `src/profile-config.ts` + 其两个测试文件 + 所有连带 import。
 - **D5 内置 provider**：5 个薄子类文件保留，顶部打 dormant 注释指向 AGENTS.md；`registry.ts` 收口到只暴露 custom。
 - **D6 MODEL_PROVIDER**：保留解析作迁移守卫——非 `custom` 值启动即报清晰迁移错误，不静默回退。
-- **D7 扩展 env**：删 `CUSTOM_AUTH_HEADER` / `CUSTOM_PATH` / `CUSTOM_TIMEOUT_MS` / `CUSTOM_THINKING_MODE` / `CUSTOM_AUTH_HEADER_VALUE`；`path` 不作 env 暴露，由代码内 `resolveRequestPath(baseUrl)` 智能拼接。
+- **D7 扩展 env**：删 `CUSTOM_AUTH_HEADER` / `CUSTOM_PATH` / `CUSTOM_TIMEOUT_MS` / `CUSTOM_THINKING_MODE` / `CUSTOM_AUTH_HEADER_VALUE`；`path` 不作 env 暴露，由代码内 `normalizeEndpoint(baseUrl)` 同时归一化 baseURL 与 requestPath。
 
 ## 最终用户体验
 
@@ -71,7 +71,7 @@ README 主推形态：
    createClient(config)    ← src/providers/registry.ts，只暴露 custom
         │
         ▼
-   CustomClient            ← 统一 Bearer + resolveRequestPath(baseUrl)
+   CustomClient            ← 统一 Bearer + normalizeEndpoint(baseUrl)
         │
         ▼
    BaseVisionClient.analyze()  ← 不变
@@ -119,7 +119,7 @@ README 主推形态：
   ```
   删除 `authHeader` / `authHeaderValue` 分支。
 - `applyThinking`：custom-only + 删除 `CUSTOM_THINKING_MODE` 后，统一返回"未配置 thinking 支持，已忽略"提示（保持现状 disabled 行为），不再读 `thinkingMode`。
-- `requestPath` 由新函数 `resolveRequestPath(baseUrl)` 解析（见下），不从 config 读。
+- `requestPath` 与 `baseUrl` 由新函数 `normalizeEndpoint(baseUrl)` 同时归一化（见下），不从 config 读。
 - 构造函数对 `config.customProvider` 缺失仍抛错（保留现有校验）。
 - `timeoutMs` 用内置常量 `60_000`。
 
@@ -128,15 +128,25 @@ README 主推形态：
 导出纯函数：
 
 ```ts
-export function resolveRequestPath(baseUrl: string): string
+export interface NormalizedEndpoint {
+  baseURL: string;
+  requestPath: string;
+}
+export function normalizeEndpoint(baseUrl: string): NormalizedEndpoint
 ```
+
+**为什么返回 `{ baseURL, requestPath }` 而非只返回 path**：axios 的请求 URL 是 `baseURL + requestPath`。如果用户填完整 URL `https://api.x.com/v1/chat/completions` 当 baseURL，而 requestPath 固定返回 `/chat/completions`，会拼成 `.../v1/chat/completions/chat/completions` 直接 404。小米官方文档示例就是填完整 URL 的，这个场景必须支持。因此需要同时归一化 baseURL 和 requestPath。
 
 规则：
 
-- 若 baseUrl 已以 `/chat/completions` 结尾 → 返回 `/chat/completions`（即原样使用，避免重复拼接）。
-- 否则 → 返回 `/chat/completions`（baseURL 前缀由 axios 在 `baseURL + requestPath` 时拼接）。
+- 若 baseUrl 已以 `/chat/completions`（或 `/chat/completions/`，忽略尾斜杠）结尾 → 拆分：`baseURL` 取去掉 `/chat/completions` 后的前缀，`requestPath = "/chat/completions"`。
+  - 例：`https://api.x.com/v1/chat/completions` → `{ baseURL: "https://api.x.com/v1", requestPath: "/chat/completions" }`。
+- 否则 → `baseURL` 原样（trim 尾斜杠），`requestPath = "/chat/completions"`。
+  - 例：`https://api.x.com/v1` → `{ baseURL: "https://api.x.com/v1", requestPath: "/chat/completions" }`。
 
-设计取舍：只判断是否已含 `/chat/completions`，不尝试"补 `/v1`"——因为各家 `/v1` 是否存在是 endpoint 差异（OpenAI 兼容端点用户自己最清楚），代码不应替用户猜测版本前缀。这避免了"用户填 `.../v1` 被错误补成 `.../v1/v1`"的风险。覆盖放在 `test/unit/request-path.test.ts`。
+两条路径最终请求 URL 都拼成 `.../v1/chat/completions`。`CustomClient` 用 `normalizeEndpoint(customConfig.baseUrl)` 的结果填 `TransportConfig.baseUrl` 与 `TransportConfig.requestPath`。
+
+设计取舍：只识别 `/chat/completions` 这一段，不尝试"补 `/v1`"——各家版本前缀是 endpoint 差异（用户自己最清楚），代码不替用户猜测，避免 `.../v1` 被错误补成 `.../v1/v1`。覆盖放在 `test/unit/request-path.test.ts`，含正反例与完整 URL 拆分用例。
 
 #### 5 个内置 client 子类（dormant 保留，D5）
 
@@ -168,7 +178,7 @@ export function resolveRequestPath(baseUrl: string): string
       "command": "npx",
       "args": ["-y", "visionkit-mcp"],
       "env": {
-        "VISIONKIT_API_KEY": "<用户输入的 key>",
+        "VISIONKIT_API_KEY": "<在此粘贴你的 API key>",
         "VISIONKIT_BASE_URL": "<用户输入的 endpoint>",
         "VISIONKIT_MODEL": "<用户输入的 model>"
       }
@@ -177,7 +187,11 @@ export function resolveRequestPath(baseUrl: string): string
 }
 ```
 
-- 保留 piped 输入模式（无 TTY 时按行读 endpoint / model / apiKey 三项，与现有契约一致）。
+**API key 安全处理**：打印片段中 `VISIONKIT_API_KEY` 始终用占位符 `<在此粘贴你的 API key>`，**不把用户输入的真实 key 打到 stdout**。原因：终端 scrollback、tmux 记录、屏幕共享等都会留存明文 key，比落盘文件更难控制。片段下方跟一行提示：
+
+> 已读取你的 endpoint 与 model；API key 请在粘贴到客户端后手动填入，不要提交到版本控制。
+
+- 保留 piped 输入模式（无 TTY 时按行读 endpoint / model / apiKey 三项，与现有契约一致）。piped 模式下同样只打印 key 占位符，真实 key 不进输出。
 - 保留 endpoint 尾斜杠 trim。
 - **删除 hostname 鉴权推断**（`inferAuth`）——统一 Bearer 后不再需要。
 - 不再 import profile-config 任何符号。
@@ -204,7 +218,7 @@ export function resolveRequestPath(baseUrl: string): string
 - 删 `test/unit/config-profile.test.ts`（D4 连带，且是唯一引用 `CUSTOM_*` 的单元测试）。
 - **删 `test/test-custom.ts`**（不重写）——它测的 x-api-key / custom-header 两种 auth 模式已彻底移除；Bearer 统一后 `buildHeaders` 逻辑过简，不值得单测。
 - `test/unit/provider-contract.test.ts`：更新 custom 构造用例——只传三字段 `customProvider`；headers 断言固定为 `Authorization: Bearer ...`；删除 x-api-key / custom-header 用例。SiliconFlow max_tokens 截断用例（client 代码未动）应仍通过，核实后保留。
-- 新增 `test/unit/request-path.test.ts`：覆盖 `resolveRequestPath` 的正反例。
+- 新增 `test/unit/request-path.test.ts`：覆盖 `normalizeEndpoint` 的正反例与完整 URL 拆分。
 - manual 脚本（`test/test-local.ts` / `test/test-qwen.ts` / `test/test-deepseek-raw.ts` 等）：核实是否依赖 `CUSTOM_*` 或 `MODEL_PROVIDER`；依赖则更新为 `VISIONKIT_*`，或标注仅供 dormant 内置 client 验证。
 
 ### 5. 文档
@@ -232,13 +246,13 @@ export function resolveRequestPath(baseUrl: string): string
 
 - **缺 env**：`VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 任一缺失 → 启动抛错，消息指明缺哪个 env（沿用现有缺参风格）。这与现有 custom 分支行为一致，只是变量名换成 `VISIONKIT_*`。
 - **旧 MODEL_PROVIDER**：非 custom 值 → 启动抛迁移错误（D6），不静默回退、不读不到 env 报含糊错。
-- **path 拼接**：`resolveRequestPath` 只做"是否已含 `/chat/completions`"判断，不猜测版本前缀；用户填错 endpoint 导致的 404 由 provider 错误归一化（`normalizeError`，已脱敏）如实返回。
+- **path 拼接**：`normalizeEndpoint` 只识别 `/chat/completions` 一段做拆分，不猜测版本前缀；用户填错 endpoint 导致的 404 由 provider 错误归一化（`normalizeError`，已脱敏）如实返回。
 - **API 调用失败**：`BaseVisionClient.normalizeError` 不变，继续脱敏 key / Authorization / token。
 
 ## 测试策略
 
 - **单元测试**：
-  - 新增 `request-path.test.ts`（正反例）。
+  - 新增 `request-path.test.ts`（正反例，含完整 URL 拆分用例）。
   - 更新 `provider-contract.test.ts`（custom 三字段 + Bearer 断言）。
   - 删除 profile-config 相关两个测试文件与 `test-custom.ts`。
 - **类型与构建**：`npm run typecheck` 与 `npm run build` 必须通过——这是 shim 删除顺序正确性的硬验证（删早了会爆 import error）。
@@ -249,9 +263,10 @@ export function resolveRequestPath(baseUrl: string): string
 
 - `npm run typecheck` 通过。
 - `npm run build` 通过。
-- `npm run test:unit` 通过（删除两个文件 + test-custom 后，用例数下降是预期的，需在 STATUS 记录新总数）。
+- `npm run test:unit` 通过——本次删除 3 个测试入口（`test/unit/profile-config.test.ts`、`test/unit/config-profile.test.ts`、`test/test-custom.ts`），用例数下降是预期的，需在 STATUS 记录新总数并确认全绿。
 - `npm pack --dry-run` 通过，发布包结构不变。
-- `npm run configure` 打印片段正确、不落盘。
+- `npm run configure` 打印片段正确、不落盘、真实 key 不进 stdout。
+- `npm run test:phase3-mimo`：用真实 mimo key 跑一次回归，确认统一 Bearer 后小米 MiMo 端点仍可成功调用。**需用户授权真实 API 调用。** 这是 custom-only + 统一 Bearer 能否成立的命门验证，静态检查证明不了小米端点还通。
 
 ## 迁移说明（写入 README）
 
@@ -268,7 +283,9 @@ VISIONKIT_BASE_URL=https://open.bigmodel.cn/api/paas/v4
 VISIONKIT_MODEL=glm-4.6v
 ```
 
-原内置 provider 的 endpoint 与默认模型（仅作迁移参考，不作为产品推荐，未做 live probe）：
+原内置 provider 的 endpoint 与默认模型（仅作迁移参考，不作为产品推荐）：
+
+> ⚠️ 以下 endpoint 与模型是从旧版内置代码中提取的迁移参考，均**未做 live probe 验证**，不构成产品推荐或兼容性承诺。迁移后如遇问题，以各家官方文档为准。
 
 | 原 provider   | BASE_URL                                              | 默认 MODEL                  |
 | ------------- | ----------------------------------------------------- | --------------------------- |
