@@ -27,7 +27,7 @@ async function createServer() {
   // 加载配置
   const config = loadConfig();
 
-  // 根据配置选择模型客户端(createClient 工厂 + CLIENT_REGISTRY 在 src/client-registry.ts)
+  // 根据配置选择模型客户端（createClient 工厂 + CLIENT_REGISTRY 在 src/providers/registry.ts）
   const visionClient = createClient(config);
 
   logger.info("Vision client initialized", {
