@@ -9,9 +9,10 @@ import { ZhipuClient } from "../../src/providers/zhipu-client.js";
 import type { HttpClientFactory, TransportConfig } from "../../src/providers/base-client.js";
 
 const baseConfig: VisionKitConfig = {
-  provider: "zhipu", apiKey: "test-key", model: "test-model", maxTokens: 8192,
+  provider: "custom", apiKey: "test-key", model: "test-model", maxTokens: 8192,
   temperature: 0.7, topP: 0.95, enableThinking: true, multiCrop: true,
   multiCropMaxTiles: 5, capabilityOverrides: {},
+  customProvider: { apiKey: "test-key", baseUrl: "https://example.test/v1", model: "test-model" },
 };
 
 function fakeTransport() {
@@ -113,7 +114,7 @@ describe("Provider 契约", () => {
   it("Qwen 锁定 thinking true/false/undefined 三态 payload", async () => {
     for (const [thinking, expected] of [[true, { enable_thinking: true, thinking_budget: 81920 }], [false, { enable_thinking: false }], [undefined, undefined]] as const) {
       const { factory, post } = fakeTransport();
-      const client = new QwenClient({ ...baseConfig, provider: "qwen", capabilityOverrides: { maxImages: 1 } }, factory);
+      const client = new QwenClient({ ...baseConfig, provider: "qwen" as "custom", capabilityOverrides: { maxImages: 1 } }, factory);
       await client.analyze({ images: ["image"], userPrompt: "user", thinking });
       expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).extra_body).toEqual(expected);
     }
@@ -121,7 +122,7 @@ describe("Provider 契约", () => {
 
   it("SiliconFlow 仅对 thinking=true 产生 warning", async () => {
     const { factory } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow", model: "deepseek-ai/DeepSeek-OCR" }, factory);
+    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR" }, factory);
     await expect(client.analyze({ images: ["image"], userPrompt: "u", thinking: true })).resolves.toMatchObject({ warnings: [expect.stringContaining("不支持 thinking")] });
   });
 
@@ -130,13 +131,13 @@ describe("Provider 契约", () => {
     [undefined, undefined],
   ] as const)("SiliconFlow thinking=%s 不产生 warning", async (thinking, expected) => {
     const { factory } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow", model: "deepseek-ai/DeepSeek-OCR" }, factory);
+    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR" }, factory);
     await expect(client.analyze({ images: ["image"], userPrompt: "u", thinking })).resolves.toEqual({ text: "ok", warnings: expected });
   });
 
   it("SiliconFlow 将 max_tokens 截断到 4096", async () => {
     const { factory, post } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow", model: "deepseek-ai/DeepSeek-OCR", maxTokens: 8192 }, factory);
+    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR", maxTokens: 8192 }, factory);
     await client.analyze({ images: ["image"], userPrompt: "u" });
     expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).max_tokens).toBe(4096);
   });
@@ -147,7 +148,7 @@ describe("Provider 契约", () => {
     ["undefined", undefined, undefined],
   ] as const)("Volcengine thinking=%s payload 正确", async (_label, thinking, expected) => {
     const { factory, post } = fakeTransport();
-    const client = new VolcengineClient({ ...baseConfig, provider: "volcengine" }, factory);
+    const client = new VolcengineClient({ ...baseConfig, provider: "volcengine" as "custom" }, factory);
     await client.analyze({ images: ["image"], userPrompt: "u", thinking });
     expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).thinking).toEqual(expected);
   });
@@ -158,7 +159,7 @@ describe("Provider 契约", () => {
     ["undefined", undefined, undefined],
   ] as const)("Hunyuan thinking=%s payload 正确", async (_label, thinking, expected) => {
     const { factory, post } = fakeTransport();
-    const client = new HunyuanClient({ ...baseConfig, provider: "hunyuan" }, factory);
+    const client = new HunyuanClient({ ...baseConfig, provider: "hunyuan" as "custom" }, factory);
     await client.analyze({ images: ["image"], userPrompt: "u", thinking });
     expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).enable_thinking).toBe(expected);
   });
@@ -167,7 +168,7 @@ describe("Provider 契约", () => {
     const { factory, post } = fakeTransport();
     const client = new CustomClient({
       ...baseConfig, provider: "custom", model: "mimo-v2.5",
-      customProvider: { apiKey: "mimo-secret", baseUrl: "https://example.test/v1", model: "mimo-v2.5", authHeader: "custom", authHeaderValue: "api-key: {{key}}", path: "/chat/completions", timeoutMs: 1000, thinkingMode: "disabled" },
+      customProvider: { apiKey: "mimo-secret", baseUrl: "https://example.test/v1", model: "mimo-v2.5" },
     }, factory);
     const result = await client.analyze({ images: ["1", "2", "3", "4", "5"], userPrompt: "u", thinking: true });
     expect(post).toHaveBeenCalledOnce();
@@ -175,56 +176,24 @@ describe("Provider 契约", () => {
     expect(client.capabilities.maxImages).toBe(5);
   });
 
-  it.each([
-    ["openai", true, true, undefined],
-    ["openai", false, false, undefined],
-    ["openai", undefined, undefined, undefined],
-    ["qwen_extra_body", true, undefined, { enable_thinking: true }],
-    ["qwen_extra_body", false, undefined, { enable_thinking: false }],
-    ["qwen_extra_body", undefined, undefined, undefined],
-  ] as const)("Custom %s thinking=%s payload 正确", async (mode, thinking, enableThinking, extraBody) => {
-    const { factory, post } = fakeTransport();
-    const client = new CustomClient({
-      ...baseConfig,
-      provider: "custom",
-      customProvider: {
-        apiKey: "secret",
-        baseUrl: "https://example.test/v1",
-        model: "other-model",
-        authHeader: "bearer",
-        path: "/responses",
-        timeoutMs: 1234,
-        thinkingMode: mode,
-      },
-    }, factory);
-    await client.analyze({ images: ["image"], userPrompt: "u", thinking });
-    const body = (post.mock.calls as unknown as [string, any][])[0][1];
-    expect(body.enable_thinking).toBe(enableThinking);
-    expect(body.extra_body).toEqual(extraBody);
-  });
-
-  it.each([
-    ["bearer", undefined, "Authorization", "Bearer secret"],
-    ["x-api-key", undefined, "x-api-key", "secret"],
-    ["custom", "X-Custom-Key: {{key}}", "X-Custom-Key", "secret"],
-  ] as const)("Custom %s 鉴权生成正确 Header", (authHeader, authHeaderValue, headerName, expected) => {
+  it("Custom 统一使用 Bearer 鉴权，并用 normalizeEndpoint 拆分完整 URL", () => {
     const { factory, transports } = fakeTransport();
     new CustomClient({
       ...baseConfig,
       provider: "custom",
       customProvider: {
         apiKey: "secret",
-        baseUrl: "https://example.test/v1/",
+        baseUrl: "https://example.test/v1/chat/completions",
         model: "other-model",
-        authHeader,
-        authHeaderValue,
-        path: "/responses",
-        timeoutMs: 1234,
-        thinkingMode: "disabled",
       },
     }, factory);
-    expect(transports[0]).toMatchObject({ baseUrl: "https://example.test/v1/", requestPath: "/responses", timeoutMs: 1234 });
-    expect(transports[0].headers[headerName]).toBe(expected);
+    expect(transports[0]).toMatchObject({
+      baseUrl: "https://example.test/v1",
+      requestPath: "/chat/completions",
+      timeoutMs: 60_000,
+    });
+    expect(transports[0].headers.Authorization).toBe("Bearer secret");
+    expect(transports[0].headers["Content-Type"]).toBe("application/json");
   });
 
   it("六家 Provider transport 的 endpoint、path 与 Bearer header 正确", () => {
@@ -237,7 +206,7 @@ describe("Provider 契约", () => {
     ] as const;
     for (const [Client, provider, baseUrl] of cases) {
       const { factory, transports } = fakeTransport();
-      new Client({ ...baseConfig, provider }, factory);
+      new Client({ ...baseConfig, provider: provider as "custom" }, factory);
       expect(transports[0]).toMatchObject({ baseUrl, requestPath: "/chat/completions" });
       expect(transports[0].headers.Authorization).toBe("Bearer test-key");
     }
