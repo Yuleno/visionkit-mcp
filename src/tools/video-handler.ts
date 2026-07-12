@@ -1,5 +1,5 @@
 import type { VisionKitConfig } from "../config.js";
-import type { VisionClient } from "../vision-client.js";
+import type { VisionClient } from "../providers/vision-client.js";
 import { VideoFrameExtractor } from "../media/video-frames.js";
 import { buildPrompt } from "./prompts.js";
 import { createErrorResponse, createStructuredSuccessResponse, withRetry } from "../utils/helpers.js";

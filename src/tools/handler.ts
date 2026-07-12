@@ -1,5 +1,5 @@
 import type { ToolDef } from "./definitions.js";
-import type { Capabilities, VisionClient } from "../vision-client.js";
+import type { Capabilities, VisionClient } from "../providers/vision-client.js";
 import type { VisionKitConfig } from "../config.js";
 import { buildPrompt } from "./prompts.js";
 import {

@@ -1,4 +1,4 @@
-import type { VisionClient } from "../vision-client.js";
+import type { VisionClient } from "../providers/vision-client.js";
 import type { PreparedImage, MediaItem, ResolvedDetailProfile } from "../media/detail-strategy.js";
 import type { LoadedMedia } from "../media/load-media.js";
 import { cropLoadedImage } from "../image-processor.js";
