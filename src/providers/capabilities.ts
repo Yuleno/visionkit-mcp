@@ -12,7 +12,6 @@ export const DEFAULT_CAPABILITIES: Capabilities = {
 /** 只登记已验证或有明确文档依据的差异；未知能力保持保守回退。 */
 export const CAPABILITY_PROFILES: Record<string, Partial<Capabilities>> = {
   "custom/mimo-v2.5": { maxImages: 5, systemPromptMode: "merge_user" },
-  "siliconflow/deepseek-ai/DeepSeek-OCR": { systemPromptMode: "merge_user" },
 };
 
 export function resolveCapabilities(
