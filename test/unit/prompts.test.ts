@@ -15,6 +15,7 @@ describe("prompts", () => {
   it("buildPrompt('extract_text') 默认不含小节标题(纯原文)", () => {
     const p = buildPrompt("extract_text", { userPrompt: "提取文字", structured: false });
     expect(p).not.toMatch(/## 提取文本/);
+    expect(p).toMatch(/质量判断/);
   });
   it("buildPrompt('extract_text') structured=true 含小节标题", () => {
     const p = buildPrompt("extract_text", { userPrompt: "提取文字", structured: true });
@@ -34,5 +35,10 @@ describe("prompts", () => {
     const p = buildPrompt("video_analysis", { userPrompt: "分析变化" });
     expect(p).toMatch(/## 时间线/);
     expect(p).toMatch(/## 不确定性/);
+  });
+  it("专项 prompt 区分直接证据与推断", () => {
+    expect(buildPrompt("understand_technical_diagram", { userPrompt: "解读" })).toMatch(/直接可见/);
+    expect(buildPrompt("ui_diff_check", { userPrompt: "对比" })).toMatch(/不得编造或估算任何像素/);
+    expect(buildPrompt("diagnose_error", { userPrompt: "诊断" })).toMatch(/截图中直接可见/);
   });
 });

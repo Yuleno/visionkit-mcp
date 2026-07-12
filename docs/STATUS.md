@@ -13,12 +13,13 @@
 - 期4 Agentic Zoom 核心实现完成，默认关闭；自动化验证及 mimo-v2.5 首次开关对照已完成。
 - 期5首版 `video_analysis` 完成：本地FFmpeg均匀抽帧路径、专用prompt/handler、安全预算及mimo-v2.5真实验收已落地；clipboard/latest与grounding继续暂缓。
 - 期5.1智能关键帧完成：混合均匀/场景候选、颜色感知dHash去重、时序状态保留与失败降级已落地。
+- 期6质量基础设施首版完成：4组图片 manifest、离线评分器、评分 CLI、专项证据约束和 UI diff 未测量样式值防护已落地。
 
 ## 已验证状态
 
 - `npm run typecheck`：通过。
 - `npm run build`：通过。
-- `npm run test:unit`：16个测试文件、131个用例通过（含智能关键帧、不同纯色、防时序误删及场景失败降级契约）。
+- `npm run test:unit`：18个测试文件、138个用例通过（含质量评分、证据防护、智能关键帧、不同纯色、防时序误删及场景失败降级契约）。
 - 期3实现后 `npm run typecheck`、`npm run build` 均通过。
 - `npm run test:local`：mimo-v2.5 + 5图多裁剪端到端调用成功。
 - MCP `tools/list`：mimo-v2.5 返回8个工具，新增 `video_analysis`；单图能力Provider因 `minImages=2` 不注册视频工具。
@@ -31,6 +32,8 @@
 - 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
 - 期5视频真实验收：FFmpeg 8.1.2从6.2秒合成视频均匀抽取5帧，mimo-v2.5准确输出红→绿→蓝时间线；`detailProfile=video`、`rounds=1`，仅产生1次API调用。
 - 期5.1真实验收：8.3秒合成视频在2.0～2.25秒短暂出现黄色，5个均匀点全部漏过；智能采样从7个候选保留 `0.835s红/2.1s黄/2.35s红` 3帧，mimo-v2.5准确输出红→黄→红，仍只调用1次API。
+- 视觉模型探索性对照：使用4组本地样本同图同提示词比较 VisionKit（mimo-v2.5）与智谱官方 MCP（GLM-4.6V）；两者在 OCR、技术图和报错诊断上均完成核心任务，UI diff 均有漏检或误判。VisionKit 本轮平均约10.0秒，智谱官方约50.2秒；样本量不足以得出模型全面优劣结论，详见 `docs/QUALITY_BENCHMARK.md`。
+- 期6复测：强化证据约束后，当前4 case manifest 中 VisionKit 关键事实平均召回为100%、格式遵从4/4、无依据命中0；智谱官方为68.75%、格式遵从0/4、无依据命中2。该分数只对 manifest 已声明事实有效，不能外推为模型全面优劣。
 - GitHub Actions CI已加入 Node 22 的 Ubuntu/Windows矩阵；checkout/setup-node v5复验后两端均通过，无旧Node运行时弃用警告。
 - `npm ci` 干净安装通过；同时修复了旧锁文件缺失的 Sharp `@emnapi/*` 可选依赖元数据，CI安装路径已在本机预演。
 
@@ -57,14 +60,16 @@
 
 ## 下一步
 
-1. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，但自动规划器在何时选择 Zoom 仍需更多样本评估。
-2. 期5.1完成后暂不继续扩展clipboard/latest、grounding、音频或长视频；后续优先收集真实视频样本评估场景阈值。
-3. 五家内置 provider 的 live probe 继续作为发布前兼容性矩阵；完成前不得提升其保守默认值。
+1. 扩充 manifest：小字 UI、密集表格、图表、复杂错误、字幕、屏幕录制、场景切换和短暂事件；每类样本至少运行多次后再比较策略。
+2. 基于基准结果继续强化专项工具的证据约束；UI diff 后续可评估低成本像素热区辅助，但不提前引入通用组件检测。
+3. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，只有在扩展基准中稳定提高细节召回后才考虑默认开启。
+4. 暂不扩展 clipboard/latest、grounding、音频、长视频、远程视频或 Provider 自动路由；五家内置 provider 的 live probe 继续作为发布前兼容性矩阵。
 
 ## 文档入口
 
 - 开发协作规则：`AGENTS.md`。
 - 文档导航：`docs/README.md`。
 - 项目使用说明：`README.md`。
+- 视觉质量基准：`docs/QUALITY_BENCHMARK.md`。
 - 历史进度与已完成计划：`docs/archive/`。
 - 设计与计划：`docs/superpowers/`。

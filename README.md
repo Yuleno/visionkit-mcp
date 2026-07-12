@@ -269,7 +269,13 @@ npm run test:phase5-mimo ./.visionkit-mcp/phase5-video-smoke.mp4
 
 # 验证均匀采样会漏掉、智能关键帧能捕获的短暂事件
 npm run test:phase5-smart
+
+# 离线检查质量 manifest 与评分器（不调用模型）
+npm run test:quality
+npm run test:quality:score
 ```
+
+模型质量对照脚本会同时消耗 VisionKit 当前模型和智谱 API 额度，不属于普通测试。执行前设置 `Z_AI_API_KEY`，具体口径与当前基线见 [`docs/QUALITY_BENCHMARK.md`](docs/QUALITY_BENCHMARK.md)。`test:quality` 与 `test:quality:score` 只处理本地 manifest/已有报告，不调用模型。本地 `.mcp.json` 已被 Git 忽略，任何 API key 都不得提交。
 
 ### 视频分析依赖
 

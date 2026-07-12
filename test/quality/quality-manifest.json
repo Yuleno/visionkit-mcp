@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "ocr",
+      "tool": "extract_text_from_screenshot",
+      "source": "imageTest/deepswe.png",
+      "requiredFacts": [
+        { "id": "title", "anyOf": ["DeepSWE"] },
+        { "id": "score", "anyOf": ["DeepSWE score", "DeepSWE Score"] },
+        { "id": "metric", "anyOf": ["Avg cost per task", "AVG COST"] },
+        { "id": "table-model", "anyOf": ["gpt-5.6-sol"] }
+      ],
+      "format": { "rawTextOnly": true }
+    },
+    {
+      "id": "technical_diagram",
+      "tool": "understand_technical_diagram",
+      "source": "imageTest/validation-architecture.png",
+      "requiredFacts": [
+        { "id": "mcp-client", "anyOf": ["MCP Client"] },
+        { "id": "server", "anyOf": ["VisionKit Server"] },
+        { "id": "processor", "anyOf": ["Image Processor"] },
+        { "id": "provider", "anyOf": ["Vision Provider"] },
+        { "id": "result", "anyOf": ["Structured Result"] },
+        { "id": "call-tool", "anyOf": ["callTool"] },
+        { "id": "prepared-images", "anyOf": ["prepared images"] }
+      ],
+      "forbiddenClaims": [
+        { "id": "unsupported-synchronous", "patterns": ["flow is synchronous", "流程是同步"] }
+      ],
+      "format": { "requiredHeadings": ["## 类型", "## 节点", "## 关系与流程"] }
+    },
+    {
+      "id": "error_diagnosis",
+      "tool": "diagnose_error_screenshot",
+      "source": "imageTest/validation-error.png",
+      "requiredFacts": [
+        { "id": "type-error", "anyOf": ["TypeError: Cannot read properties of undefined (reading 'map')"] },
+        { "id": "location", "anyOf": ["src/components/UserList.tsx:18:24", "UserList.tsx:18", "UserList.tsx"] },
+        { "id": "map-call", "anyOf": ["users.map"] },
+        { "id": "undefined-prop", "anyOf": ["users: undefined", "users 为 undefined", "users属性为 undefined", "users 属性"] }
+      ],
+      "format": { "requiredHeadings": ["## 根因", "## 错误原文", "## 位置", "## 修复步骤"] }
+    },
+    {
+      "id": "ui_diff",
+      "tool": "ui_diff_check",
+      "source": ["imageTest/validation-ui-expected.png", "imageTest/validation-ui-actual.png"],
+      "requiredFacts": [
+        { "id": "missing-subtitle", "anyOf": ["副标题", "workspace performance overview"] },
+        { "id": "radius", "anyOf": ["圆角"] },
+        { "id": "progress-colors", "anyOf": ["蓝色", "绿色"] },
+        { "id": "button", "anyOf": ["按钮", "View report"] },
+        { "id": "size-or-position", "anyOf": ["位置", "尺寸", "间距"] }
+      ],
+      "forbiddenClaims": [
+        { "id": "unsupported-exact-gap", "patterns": ["24px", "16px"] },
+        { "id": "unsupported-exact-radius", "patterns": ["12px", "8px"] },
+        { "id": "unsupported-estimated-ratio", "patterns": ["55%-60%", "45%-50%", "55% - 60%", "45% - 50%"] }
+      ],
+      "format": { "requiredHeadings": ["## 差异清单", "## 影响"], "disallowStyleMeasurements": true }
+    }
+  ]
+}

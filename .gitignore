@@ -17,6 +17,8 @@ Thumbs.db
 # 环境/密钥
 .env
 .env.local
+.mcp.json
+.claude/settings.local.json
 
 # 临时
 *.tmp

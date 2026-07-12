@@ -29,7 +29,11 @@
     "test:phase4-mimo:synthetic": "npm run build && tsx test/manual/phase4-mimo-zoom-compare.ts --synthetic",
     "test:phase4-mimo:forced": "npm run build && tsx test/manual/phase4-mimo-zoom-compare.ts --synthetic --forced-only",
     "test:phase5-mimo": "npm run build && tsx test/manual/phase5-mimo-video.ts",
-    "test:phase5-smart": "npm run build && tsx test/manual/phase5-smart-frames.ts"
+    "test:phase5-smart": "npm run build && tsx test/manual/phase5-smart-frames.ts",
+    "test:compare-zai": "npm run build && tsx test/manual/compare-zai-vision-mcp.ts",
+    "test:compare-zai:ui-diff": "npm run build && tsx test/manual/compare-zai-vision-mcp.ts --case=ui_diff",
+    "test:quality": "vitest run test/unit/quality-scorer.test.ts",
+    "test:quality:score": "tsx test/manual/score-quality.ts"
   },
   "keywords": [
     "mcp",

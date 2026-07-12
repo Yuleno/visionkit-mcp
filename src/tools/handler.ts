@@ -16,6 +16,7 @@ import {
   createErrorResponse,
 } from "../utils/helpers.js";
 import { TEXT_HEAVY_PROMPT_PATTERN } from "../constants.js";
+import { guardUiDiffMeasurements } from "./evidence-guard.js";
 
 export function makeHandler(
   def: ToolDef,
@@ -74,13 +75,16 @@ export function makeHandler(
       const execResult = zoomEnabled ? await execute() : await withRetry(execute, 2, 1000)();
 
       // 7. 双输出
+      const guarded = def.name === "ui_diff_check"
+        ? guardUiDiffMeasurements(execResult.text)
+        : { text: execResult.text, warnings: [] };
       return createStructuredSuccessResponse({
-        text: execResult.text,
+        text: guarded.text,
         provider: config.provider,
         model: client.getModelName(),
         detailProfile: prepOut.detailProfileUsed,
         rounds: execResult.rounds,
-        warnings: execResult.warnings ?? [],
+        warnings: [...(execResult.warnings ?? []), ...guarded.warnings],
       });
     } catch (err) {
       return createErrorResponse(err instanceof Error ? err.message : String(err));
