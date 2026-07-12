@@ -3,7 +3,7 @@ import path from "path";
 import { readFileSync } from "fs";
 import { makeHandler } from "../../src/tools/handler.js";
 import { TOOL_DEFS } from "../../src/tools/definitions.js";
-import type { VisionClient } from "../../src/vision-client.js";
+import type { VisionClient } from "../../src/providers/vision-client.js";
 
 const fixture = path.join(__dirname, "../fixtures/tiny.png");
 
