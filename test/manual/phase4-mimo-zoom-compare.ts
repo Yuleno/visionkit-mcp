@@ -8,7 +8,7 @@ import { loadConfig } from "../../src/config.js";
 import { createClient } from "../../src/providers/registry.js";
 import { makeHandler } from "../../src/tools/handler.js";
 import { TOOL_DEFS } from "../../src/tools/definitions.js";
-import type { VisionClient } from "../../src/vision-client.js";
+import type { VisionClient } from "../../src/providers/vision-client.js";
 
 const synthetic = process.argv.includes("--synthetic");
 const image = path.resolve(synthetic ? ".visionkit-mcp/phase4-zoom-synthetic.png" : (process.argv[2] || "imageTest/deepswe.png"));

@@ -2,13 +2,13 @@
  * VisionKit MCP 本地测试脚本
  * 直接测试图片分析功能，不需要MCP客户端
  *
- * 注：client 构造复用 src/client-registry.ts 的 createClient，
+ * 注：client 构造复用 src/providers/registry.ts 的 createClient，
  * 图片预处理直接调 src/image-processor.ts 导出的共享函数，
  * 不再持有 createClient / prepareImageInput 副本。
  */
 
 import { loadConfig } from "../src/config.js";
-import { createClient } from "../src/client-registry.js";
+import { createClient } from "../src/providers/registry.js";
 import {
   imageToBase64WithOptions,
   prepareVisionImageInput,
