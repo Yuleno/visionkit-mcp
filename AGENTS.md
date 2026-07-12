@@ -31,6 +31,7 @@
 - 期5首版 video_analysis 已完成并通过 mimo-v2.5 真实验收；依赖本地 FFmpeg，clipboard/latest 与 grounding 暂缓。
 - 期5.1智能关键帧与相邻画面去重已完成并通过短事件真实验收。
 - 期6质量基础设施与专项证据约束已完成首版；当前基准仅含4组图片样本，结论不得外推为模型的全面优劣。
+- 期7 custom-only 配置收敛已完成，内置 5 家 provider 降级为 dormant。
 - 不把未完成 live probe 的内置模型标记为多图或 thinking 已真实验证。
 - 详细验收结果、已知问题和下一步只维护在 `docs/STATUS.md`。
 
@@ -78,9 +79,8 @@ npm run configure
 - `npm run test:phase5-smart` 会生成无敏感短事件视频并真实验证智能关键帧，会产生1次API调用。
 - `test:compare-zai` 与 `test:compare-zai:ui-diff` 会同时消耗 mimo-v2.5 和智谱 API 额度，仅在用户明确授权后运行；结果写入已忽略的 `.visionkit-mcp/`。
 - `test:quality` 与 `test:quality:score` 只运行离线 manifest/评分器，不消耗 API；后者读取已有对比报告。
-- `npm run configure` 会写入项目根目录 `.visionkit-mcp/config.json`，日志写入 `.visionkit-mcp/logs/`；整个目录已被 Git 忽略。
-- 配置文件包含 API key，不能提交；不要把 `npm run configure` 当作普通验证命令主动运行，除非用户明确要求配置模型。
-- `VISIONKIT_CONFIG_FILE` 可覆盖默认连接 profile 路径。
+- `npm run configure` 打印一段 stdio 配置片段到 stdout，不落盘、不打印真实 key；整个 `.visionkit-mcp/` 目录在期7后不再由该命令创建。
+- 不要把 `npm run configure` 当作普通验证命令主动运行，除非用户明确要求配置模型。
 
 ## 验证要求
 
@@ -91,6 +91,7 @@ npm run configure
 
 ## 配置概念
 
-- 连接 profile：当前已实现，用于 custom provider 的连接信息，例如 `baseUrl`、`model`、`apiKey`、`authHeader`。
-- 能力 profile：期3已实现，代码内 `CAPABILITY_PROFILES` 描述最大图片数、system prompt 方式等模型能力，不保存密钥。
-- 命名保持 `connectionProfile` 与 `capabilityProfile` 两个独立概念，避免混淆。
+- custom-only：产品入口只有 custom provider，连接信息从 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三个 env 读取，统一 `Authorization: Bearer`。旧的多 provider 与项目内配置文件已移除。
+- 能力 profile：代码内 `CAPABILITY_PROFILES` 描述最大图片数、system prompt 方式等模型能力，不保存密钥。
+- 内置五家 provider（zhipu/siliconflow/qwen/volcengine/hunyuan）的薄子类保留为 dormant，custom-only 模式下不触达；未来建立 live-probe 兼容性矩阵后再恢复注册。
+- `npm run configure` 打印配置片段不落盘；不再写入 `.visionkit-mcp/config.json`。

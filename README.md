@@ -10,7 +10,7 @@
 
 ## 特性
 
-- 多模型支持：GLM-4.6V、DeepSeek-OCR、Qwen3-VL-Flash、Doubao-Seed-1.6、Hunyuan-Vision-1.5
+- Custom-only：通过任意 OpenAI 兼容端点接入视觉模型（如已验收的小米 mimo-v2.5）
 - 8 个专项工具：通用分析、OCR、报错诊断、技术图、数据图、UI 转换、UI 对比和视频分析
 - 面向复杂截图优化：支持大图多裁剪、文本密集场景保真处理
 - 统一预处理链路：本地文件、远程 URL、Data URI 都进入同一套处理流程
@@ -42,135 +42,75 @@ npx -y visionkit-mcp
 
 ## 配置
 
-### Claude Desktop 示例
+VisionKit 是 custom-only：通过任意 OpenAI 兼容端点接入视觉模型，统一 `Authorization: Bearer` 鉴权。三个环境变量即可完成配置。
+
+### MCP 客户端配置示例
 
 ```json
 {
   "mcpServers": {
-    "visionkit": {
+    "visionkit-mcp": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "visionkit-mcp"],
       "env": {
-        "MODEL_PROVIDER": "zhipu",
-        "ZHIPU_API_KEY": "your-api-key"
+        "VISIONKIT_API_KEY": "YOUR_API_KEY",
+        "VISIONKIT_BASE_URL": "https://your-provider.example/v1",
+        "VISIONKIT_MODEL": "your-model"
       }
     }
   }
 }
 ```
 
-把 `MODEL_PROVIDER` 和对应密钥替换为你实际使用的提供商：
+- `VISIONKIT_API_KEY`：API key（必填）。
+- `VISIONKIT_BASE_URL`：OpenAI 兼容端点（必填）。填到版本前缀即可，例如 `https://api.example.com/v1`；也支持填到完整路径 `.../v1/chat/completions`，VisionKit 会自动拆分。
+- `VISIONKIT_MODEL`：模型名（必填）。
 
-- `zhipu` -> `ZHIPU_API_KEY`
-- `siliconflow` -> `SILICONFLOW_API_KEY`
-- `qwen` -> `DASHSCOPE_API_KEY`
-- `volcengine` -> `VOLCENGINE_API_KEY`
-- `hunyuan` -> `HUNYUAN_API_KEY`
-- `custom` -> `CUSTOM_API_KEY` + `CUSTOM_BASE_URL` + `CUSTOM_MODEL_NAME`（任意 OpenAI 兼容端点）
-
-可选模型覆盖：
-
-- `MODEL_NAME=doubao-seed-1-6-flash-250828`
-- `MODEL_NAME=hunyuan-t1-vision-20250916`
-- `MODEL_NAME=HY-vision-1.5-instruct`
-
-#### Custom Provider（v1.5.0+）
-
-使用任意 OpenAI 兼容端点（OpenAI、OpenRouter、Together AI、Anthropic 代理、本地 vLLM/Ollama 等）：
+### Claude Code
 
 ```bash
 claude mcp add -s user visionkit-mcp \
-  --env MODEL_PROVIDER=custom \
-  --env CUSTOM_API_KEY=sk-your-key \
-  --env CUSTOM_BASE_URL=https://your-endpoint.com/v1 \
-  --env CUSTOM_MODEL_NAME=your-model \
+  --env VISIONKIT_API_KEY=YOUR_API_KEY \
+  --env VISIONKIT_BASE_URL=https://your-provider.example/v1 \
+  --env VISIONKIT_MODEL=your-model \
   -- npx -y visionkit-mcp
 ```
 
-可选配置（都有默认值）：
+### 生成配置片段
 
-- `CUSTOM_AUTH_HEADER=bearer` — `bearer` / `x-api-key` / `custom`
-- `CUSTOM_PATH=/chat/completions` — API 路径
-- `CUSTOM_TIMEOUT_MS=60000` — 超时毫秒
-- `CUSTOM_THINKING_MODE=disabled` — `disabled` / `openai` / `qwen_extra_body`
-- `CUSTOM_AUTH_HEADER_VALUE="X-API-Key: {{key}}"` — 自定义 Header 模板
-
-开发阶段也可以用交互式配置命令生成项目内配置。请在项目根目录运行：
+如果想在交互式引导下生成配置片段，可在项目根目录运行：
 
 ```bash
 npm run configure
 ```
 
-命令只会询问三项：API endpoint、Model name、API key。Profile 名自动使用模型名，配置保存到项目根目录的 `.visionkit-mcp/config.json`。该文件包含 API key，已由 `.gitignore` 排除，请勿提交到仓库。例如小米 MiMo：
+命令会询问 API endpoint、Model name、API key 三项，然后打印一段可直接粘贴到客户端的配置片段。**该命令不会保存任何文件，也不会把真实 API key 打到屏幕**——片段里的 key 是占位符，请在粘贴到客户端后手动填入。
 
-```text
-API endpoint: https://api.xiaomimimo.com/v1
-Model name: mimo-v2.5
-API key: your-api-key
+### 迁移说明（从旧版多 provider 升级）
+
+旧版的 `MODEL_PROVIDER=zhipu`（以及 siliconflow / qwen / volcengine / hunyuan）已不再支持。请改为 custom 配置：
+
+```
+# 旧
+MODEL_PROVIDER=zhipu
+ZHIPU_API_KEY=xxxxx
+
+# 新
+VISIONKIT_API_KEY=xxxxx
+VISIONKIT_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+VISIONKIT_MODEL=glm-4.6v
 ```
 
-VisionKit 会自动识别 `api.xiaomimimo.com` 并使用 `api-key` 鉴权头；其他 OpenAI 兼容端点默认使用 `Authorization: Bearer`。如果只配置了一个 profile，启动 MCP 时无需再传 `CUSTOM_*` 环境变量。
+> ⚠️ 以下 endpoint 与模型是从旧版内置代码中提取的迁移参考，均**未做 live probe 验证**，不构成产品推荐或兼容性承诺。迁移后如遇问题，以各家官方文档为准。
 
-如需把配置保存在其他位置，可通过 `VISIONKIT_CONFIG_FILE` 指定完整路径；该变量的优先级高于项目内默认路径。
-
-开发日志保存在项目根目录的 `.visionkit-mcp/logs/`。配置与日志目录均已由 `.gitignore` 排除，开发阶段不会创建用户主目录下的 `.visionkit-mcp`。
-
-### 快捷配置命令
-
-#### Claude Code
-
-```bash
-# Zhipu
-claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=zhipu --env ZHIPU_API_KEY=your-api-key -- npx -y visionkit-mcp
-
-# SiliconFlow
-claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=siliconflow --env SILICONFLOW_API_KEY=your-api-key -- npx -y visionkit-mcp
-
-# Qwen
-claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=qwen --env DASHSCOPE_API_KEY=your-api-key -- npx -y visionkit-mcp
-
-# Volcengine
-claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=volcengine --env VOLCENGINE_API_KEY=your-api-key --env MODEL_NAME=doubao-seed-1-6-flash-250828 -- npx -y visionkit-mcp
-
-# Hunyuan
-claude mcp add -s user visionkit-mcp --env MODEL_PROVIDER=hunyuan --env HUNYUAN_API_KEY=your-api-key --env MODEL_NAME=hunyuan-t1-vision-20250916 -- npx -y visionkit-mcp
-```
-
-#### 本地开发模式
-
-```json
-{
-  "mcpServers": {
-    "visionkit": {
-      "command": "node",
-      "args": ["D:\\codes\\visionkit-mcp\\build\\index.js"],
-      "env": {
-        "MODEL_PROVIDER": "zhipu",
-        "ZHIPU_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-#### Cline / VSCode
-
-在项目根目录或 `.vscode/` 下创建 `mcp.json`：
-
-```json
-{
-  "mcpServers": {
-    "visionkit": {
-      "command": "npx",
-      "args": ["-y", "visionkit-mcp"],
-      "env": {
-        "MODEL_PROVIDER": "zhipu",
-        "ZHIPU_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
+| 原 provider   | BASE_URL                                              | 默认 MODEL                     |
+| ------------- | ----------------------------------------------------- | ------------------------------ |
+| zhipu         | `https://open.bigmodel.cn/api/paas/v4`                | `glm-4.6v`                     |
+| siliconflow   | `https://api.siliconflow.cn/v1`                       | `deepseek-ai/DeepSeek-OCR`     |
+| qwen          | `https://dashscope.aliyuncs.com/compatible-mode/v1`   | `qwen3-vl-flash`               |
+| volcengine    | `https://ark.cn-beijing.volces.com/api/v3`            | `doubao-seed-1-6-flash-250828` |
+| hunyuan       | `https://api.hunyuan.cloud.tencent.com/v1`            | `hunyuan-t1-vision-20250916`   |
 
 ## 使用方式
 
@@ -213,11 +153,11 @@ image_analysis({
 
 | 变量名               | 默认值     | 说明                                                                |
 | -------------------- | ---------- | ------------------------------------------------------------------- |
-| `MODEL_PROVIDER`     | `zhipu`    | 模型提供商：`zhipu`、`siliconflow`、`qwen`、`volcengine`、`hunyuan` |
-| `MODEL_NAME`         | 自动选择   | 模型名称                                                            |
 | `BASE_VISION_PROMPT` | 内置默认值 | 自定义基础视觉提示词                                                |
 | `MAX_TOKENS`         | `8192`     | 最大生成 token 数（部分模型有硬上限，详见下方说明）                 |
-| `VISIONKIT_CONFIG_FILE` | 项目内 `.visionkit-mcp/config.json` | 自定义连接 profile 配置文件的完整路径                    |
+| `VISIONKIT_API_KEY`  | （无）     | custom provider 的 API key，统一 `Authorization: Bearer`；必填     |
+| `VISIONKIT_BASE_URL` | （无）     | OpenAI 兼容端点，填到 `.../v1` 即可，也支持完整路径；必填           |
+| `VISIONKIT_MODEL`    | （无）     | 模型名称；必填                                                      |
 | `VISIONKIT_MAX_IMAGES` | 按模型能力 profile | 覆盖当前模型最多可接收的图片数（正整数） |
 | `VISIONKIT_SYSTEM_PROMPT_MODE` | 按模型能力 profile | `native` 或 `merge_user`，控制 system prompt 的发送方式 |
 | `VISIONKIT_NATIVE_VIDEO` | `false` | 覆盖模型是否原生支持视频（`true`/`false`/`1`/`0`） |
@@ -231,23 +171,13 @@ image_analysis({
 | `VISIONKIT_FFMPEG_PATH` | PATH 中的 `ffmpeg` | FFmpeg 可执行文件路径 |
 | `VISIONKIT_FFPROBE_PATH` | PATH 中的 `ffprobe` | ffprobe 可执行文件路径 |
 
-> 未经验证的 provider/model 默认按单图、`merge_user` 处理；已在本项目完成真实验收的 custom `mimo-v2.5` 默认允许最多 5 图。能力覆盖只描述模型能力，不包含密钥；连接信息仍保存在 connection profile 中。
+> 未经验证的 provider/model 默认按单图、`merge_user` 处理；已在本项目完成真实验收的 custom `mimo-v2.5` 默认允许最多 5 图。能力覆盖只描述模型能力，不包含密钥。
 
 > [!IMPORTANT]
 > **关于 Token 限制的特别说明：**
 >
 > 1. **SiliconFlow (DeepSeek-OCR)**: 该模型的总上下文长度（输入+输出）仅为 **8192**。为了确保图片能正常输入，VisionKit 已在客户端内部将 `MAX_TOKENS` 硬性限制在 **4096** 以内。即使你在环境变量中设置了更高的值，也会被截断。
 > 2. **通用建议**: 视觉理解任务通常不需要极长的输出。对于大多数模型，建议将 `MAX_TOKENS` 保持在 `4096` 或 `8192`。设置过高（如 `16384`）在处理大图时，可能因总长度超过模型上限而导致 `400` 错误。
-
-### 提供商密钥
-
-| 提供商      | 必填环境变量          | 默认模型                       |
-| ----------- | --------------------- | ------------------------------ |
-| Zhipu       | `ZHIPU_API_KEY`       | `glm-4.6v`                     |
-| SiliconFlow | `SILICONFLOW_API_KEY` | `deepseek-ai/DeepSeek-OCR`     |
-| Qwen        | `DASHSCOPE_API_KEY`   | `qwen3-vl-flash`               |
-| Volcengine  | `VOLCENGINE_API_KEY`  | `doubao-seed-1-6-flash-250828` |
-| Hunyuan     | `HUNYUAN_API_KEY`     | `hunyuan-t1-vision-20250916`   |
 
 ## 本地测试
 
@@ -265,7 +195,7 @@ npm run test:local https://example.com/image.jpg
 npm run typecheck
 
 # 已配置 mimo-v2.5 和 FFmpeg 时执行视频真实验收
-npm run test:phase5-mimo ./.visionkit-mcp/phase5-video-smoke.mp4
+npm run test:phase5-mimo ./phase5-video-smoke.mp4
 
 # 验证均匀采样会漏掉、智能关键帧能捕获的短暂事件
 npm run test:phase5-smart
@@ -275,7 +205,7 @@ npm run test:quality
 npm run test:quality:score
 ```
 
-模型质量对照脚本会同时消耗 VisionKit 当前模型和智谱 API 额度，不属于普通测试。执行前设置 `Z_AI_API_KEY`，具体口径与当前基线见 [`docs/QUALITY_BENCHMARK.md`](docs/QUALITY_BENCHMARK.md)。`test:quality` 与 `test:quality:score` 只处理本地 manifest/已有报告，不调用模型。本地 `.mcp.json` 已被 Git 忽略，任何 API key 都不得提交。
+模型质量对照脚本会同时消耗 VisionKit 当前模型和智谱 API 额度，不属于普通测试。执行前设置 `Z_AI_API_KEY`，具体口径与当前基线见 [`docs/QUALITY_BENCHMARK.md`](docs/QUALITY_BENCHMARK.md)。`test:quality` 与 `test:quality:score` 只处理本地 manifest/已有报告，不调用模型。
 
 ### 视频分析依赖
 
@@ -313,7 +243,6 @@ visionkit-mcp/
 │       └── logger.ts
 ├── test/
 │   ├── test-local.ts
-│   ├── test-qwen.ts
 │   ├── test-deepseek-raw.ts
 │   └── test-data-uri.ts
 ├── build/
@@ -322,6 +251,8 @@ visionkit-mcp/
 ```
 
 ## 模型选择建议
+
+> VisionKit 现在是 custom-only，以下建议仅在把 `VISIONKIT_BASE_URL` 指向对应 provider 端点时作为参考；相关 endpoint 与模型均为从旧版内置代码提取的迁移参考，未做 live probe 验证，不构成产品推荐或兼容性承诺。
 
 - OCR、文字识别：DeepSeek-OCR
 - 快速低成本通用分析：Qwen3-VL-Flash

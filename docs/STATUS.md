@@ -1,7 +1,7 @@
 # VisionKit MCP 当前状态
 
 > 当前状态的唯一事实源。阶段、验收结果、已知问题或下一步发生变化时，只更新本文件。
-> 最近更新：2026-07-12。
+> 最近更新：2026-07-13。
 
 ## 当前阶段
 
@@ -14,13 +14,15 @@
 - 期5首版 `video_analysis` 完成：本地FFmpeg均匀抽帧路径、专用prompt/handler、安全预算及mimo-v2.5真实验收已落地；clipboard/latest与grounding继续暂缓。
 - 期5.1智能关键帧完成：混合均匀/场景候选、颜色感知dHash去重、时序状态保留与失败降级已落地。
 - 期6质量基础设施首版完成：4组图片 manifest、离线评分器、评分 CLI、专项证据约束和 UI diff 未测量样式值防护已落地。
+- 期7 custom-only 收敛完成：产品入口改为 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三件套，统一 Bearer；`MODEL_PROVIDER` 非 custom 值报迁移错误；configure 改为打印配置片段不落盘；内置 5 家薄子类保留为 dormant。属破坏性变更，旧配置需按 README 迁移说明升级。
 
 ## 已验证状态
 
 - `npm run typecheck`：通过。
 - `npm run build`：通过。
-- `npm run test:unit`：18个测试文件、138个用例通过（含质量评分、证据防护、智能关键帧、不同纯色、防时序误删及场景失败降级契约）。
+- `npm run test:unit`：17个测试文件、112个用例通过（期7 删除 profile-config、test-custom、test-qwen 后的口径）。
 - 期3实现后 `npm run typecheck`、`npm run build` 均通过。
+- `npm run typecheck`、`npm run build`、`npm pack --dry-run` 期7 custom-only 收敛后均通过；`npm run configure` 打印配置片段、不落盘、key 用占位符。
 - `npm run test:local`：mimo-v2.5 + 5图多裁剪端到端调用成功。
 - MCP `tools/list`：mimo-v2.5 返回8个工具，新增 `video_analysis`；单图能力Provider因 `minImages=2` 不注册视频工具。
 - MCP `callTool`：`image_analysis`、`extract_text_from_screenshot`、`diagnose_error_screenshot`、`understand_technical_diagram`、`analyze_data_visualization`、`ui_to_artifact`、`ui_diff_check` 全部真实调用成功。
@@ -39,10 +41,8 @@
 
 ## 当前运行约定
 
-- 开发期连接 profile：项目根目录 `.visionkit-mcp/config.json`。
-- 开发日志：项目根目录 `.visionkit-mcp/logs/`。
-- `.visionkit-mcp/` 已被 Git 忽略，配置包含 API key，不能提交。
-- `VISIONKIT_CONFIG_FILE` 可覆盖默认连接 profile 路径。
+- 期7 起改为 custom-only 三件套：`VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 环境变量直接提供连接信息。
+- 旧的开发期连接 profile（项目内 `.visionkit-mcp/config.json`）与 `VISIONKIT_CONFIG_FILE` 已随 custom-only 收敛移除。
 - 真实模型调用会消耗 API，执行前必须获得用户确认。
 
 ## 期3实现与验证边界
@@ -63,7 +63,7 @@
 1. 扩充 manifest：小字 UI、密集表格、图表、复杂错误、字幕、屏幕录制、场景切换和短暂事件；每类样本至少运行多次后再比较策略。
 2. 基于基准结果继续强化专项工具的证据约束；UI diff 后续可评估低成本像素热区辅助，但不提前引入通用组件检测。
 3. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，只有在扩展基准中稳定提高细节召回后才考虑默认开启。
-4. 暂不扩展 clipboard/latest、grounding、音频、长视频、远程视频或 Provider 自动路由；五家内置 provider 的 live probe 继续作为发布前兼容性矩阵。
+4. 暂不扩展 clipboard/latest、grounding、音频、长视频、远程视频或 Provider 自动路由；五家内置 provider 的 live probe 继续作为发布前兼容性矩阵，也是未来重新启用这些内置 provider 的路径。
 
 ## 文档入口
 
