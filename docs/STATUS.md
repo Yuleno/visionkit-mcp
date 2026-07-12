@@ -12,12 +12,13 @@
 - 期3的五家内置 provider live probe 尚未执行（当前无对应凭据），因此尚未满足其发布门槛；不能宣称这些模型的多图与 thinking payload 已真实验证。
 - 期4 Agentic Zoom 核心实现完成，默认关闭；自动化验证及 mimo-v2.5 首次开关对照已完成。
 - 期5首版 `video_analysis` 完成：本地FFmpeg均匀抽帧路径、专用prompt/handler、安全预算及mimo-v2.5真实验收已落地；clipboard/latest与grounding继续暂缓。
+- 期5.1智能关键帧完成：混合均匀/场景候选、颜色感知dHash去重、时序状态保留与失败降级已落地。
 
 ## 已验证状态
 
 - `npm run typecheck`：通过。
 - `npm run build`：通过。
-- `npm run test:unit`：16个测试文件、128个用例通过（含视频采样、安全限制、配置硬上限、fake runner与handler契约）。
+- `npm run test:unit`：16个测试文件、131个用例通过（含智能关键帧、不同纯色、防时序误删及场景失败降级契约）。
 - 期3实现后 `npm run typecheck`、`npm run build` 均通过。
 - `npm run test:local`：mimo-v2.5 + 5图多裁剪端到端调用成功。
 - MCP `tools/list`：mimo-v2.5 返回8个工具，新增 `video_analysis`；单图能力Provider因 `minImages=2` 不注册视频工具。
@@ -29,6 +30,7 @@
 - 期4.1动态裁剪验收：自动生成4000×4000合成仪表盘，通过手动验收脚本注入右下角 `(2,2)` 决策，真实执行 LoadedMedia→3×3裁剪→mimo-v2.5 最终调用；返回正确验证码 `VK7Q-29MX-4P8R`、`rounds=2`，动态裁剪与最终调用链 live 通过。该结果不代表自动规划器一定会主动选择 Zoom。
 - 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
 - 期5视频真实验收：FFmpeg 8.1.2从6.2秒合成视频均匀抽取5帧，mimo-v2.5准确输出红→绿→蓝时间线；`detailProfile=video`、`rounds=1`，仅产生1次API调用。
+- 期5.1真实验收：8.3秒合成视频在2.0～2.25秒短暂出现黄色，5个均匀点全部漏过；智能采样从7个候选保留 `0.835s红/2.1s黄/2.35s红` 3帧，mimo-v2.5准确输出红→黄→红，仍只调用1次API。
 - GitHub Actions CI已加入 Node 22 的 Ubuntu/Windows矩阵；checkout/setup-node v5复验后两端均通过，无旧Node运行时弃用警告。
 - `npm ci` 干净安装通过；同时修复了旧锁文件缺失的 Sharp `@emnapi/*` 可选依赖元数据，CI安装路径已在本机预演。
 
@@ -56,7 +58,7 @@
 ## 下一步
 
 1. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，但自动规划器在何时选择 Zoom 仍需更多样本评估。
-2. 观察 GitHub Actions 首次运行结果；若跨平台全绿，再评估视频镜头检测/字幕等增量，不立即实现clipboard/latest或grounding。
+2. 期5.1完成后暂不继续扩展clipboard/latest、grounding、音频或长视频；后续优先收集真实视频样本评估场景阈值。
 3. 五家内置 provider 的 live probe 继续作为发布前兼容性矩阵；完成前不得提升其保守默认值。
 
 ## 文档入口

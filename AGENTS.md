@@ -29,6 +29,7 @@
 - 期3核心实现和 mimo-v2.5 的7工具真实回归已完成；五家内置 provider live probe 因缺少凭据尚未执行，能力保持保守默认值。
 - 期4 Agentic Zoom 核心实现及期4.1动态裁剪 live 链路验收完成，仍默认关闭；自动规划器的主动触发质量需继续积累样本。
 - 期5首版 video_analysis 已完成并通过 mimo-v2.5 真实验收；依赖本地 FFmpeg，clipboard/latest 与 grounding 暂缓。
+- 期5.1智能关键帧与相邻画面去重已完成并通过短事件真实验收。
 - 不把未完成 live probe 的内置模型标记为多图或 thinking 已真实验证。
 - 详细验收结果、已知问题和下一步只维护在 `docs/STATUS.md`。
 
@@ -57,6 +58,7 @@ npm run test:phase4-mimo [image-path]
 npm run test:phase4-mimo:synthetic
 npm run test:phase4-mimo:forced
 npm run test:phase5-mimo [video-path]
+npm run test:phase5-smart
 npm run configure
 ```
 
@@ -68,6 +70,7 @@ npm run configure
 - `npm run test:phase4-mimo` 会将同一图片发送给 mimo-v2.5，执行 Agentic Zoom 关闭/开启对照，会产生 API 消耗。
 - `test:phase4-mimo:synthetic` 使用无真实数据的合成图对照；`:forced` 仅用于动态裁剪 live 链路验收，手动注入网格决策。
 - `npm run test:phase5-mimo` 会用本地FFmpeg抽帧并把帧发送给mimo-v2.5，会产生API消耗。
+- `npm run test:phase5-smart` 会生成无敏感短事件视频并真实验证智能关键帧，会产生1次API调用。
 - `npm run configure` 会写入项目根目录 `.visionkit-mcp/config.json`，日志写入 `.visionkit-mcp/logs/`；整个目录已被 Git 忽略。
 - 配置文件包含 API key，不能提交；不要把 `npm run configure` 当作普通验证命令主动运行，除非用户明确要求配置模型。
 - `VISIONKIT_CONFIG_FILE` 可覆盖默认连接 profile 路径。

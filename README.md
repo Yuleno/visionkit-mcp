@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-期1至期4.1已完成，期5首版新增本地视频均匀抽帧分析；mimo-v2.5 已真实验收图片、Agentic Zoom链路与视频分析。当前状态统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
+期1至期4.1已完成，期5视频分析支持均匀帧、场景关键帧与颜色感知去重；mimo-v2.5 已真实验收图片、Agentic Zoom链路与视频分析。当前状态统一维护在 [docs/STATUS.md](./docs/STATUS.md)。
 
 ## 特性
 
@@ -227,7 +227,7 @@ image_analysis({
 | `VISIONKIT_MAX_ZOOM_ROUNDS` | `1` | Zoom 轮次；首版仅接受 `1` |
 | `VISIONKIT_VIDEO_MAX_MB` | `100` | 视频大小上限，最大只能设为100MB |
 | `VISIONKIT_VIDEO_MAX_SECONDS` | `120` | 视频时长上限，最大只能设为120秒 |
-| `VISIONKIT_VIDEO_MAX_FRAMES` | `5` | 均匀抽帧数，范围2～5且不超过模型图片上限 |
+| `VISIONKIT_VIDEO_MAX_FRAMES` | `5` | 最终关键帧预算，范围2～5且不超过模型图片上限 |
 | `VISIONKIT_FFMPEG_PATH` | PATH 中的 `ffmpeg` | FFmpeg 可执行文件路径 |
 | `VISIONKIT_FFPROBE_PATH` | PATH 中的 `ffprobe` | ffprobe 可执行文件路径 |
 
@@ -266,6 +266,9 @@ npm run typecheck
 
 # 已配置 mimo-v2.5 和 FFmpeg 时执行视频真实验收
 npm run test:phase5-mimo ./.visionkit-mcp/phase5-video-smoke.mp4
+
+# 验证均匀采样会漏掉、智能关键帧能捕获的短暂事件
+npm run test:phase5-smart
 ```
 
 ### 视频分析依赖
@@ -278,7 +281,7 @@ ffmpeg -version
 ffprobe -version
 ```
 
-安装后若当前终端尚未刷新 PATH，可重新打开终端，或使用 `VISIONKIT_FFMPEG_PATH` 与 `VISIONKIT_FFPROBE_PATH` 指定完整路径。视频会先在本机均匀抽帧，只有抽取出的 JPEG 帧会发送给视觉模型。
+安装后若当前终端尚未刷新 PATH，可重新打开终端，或使用 `VISIONKIT_FFMPEG_PATH` 与 `VISIONKIT_FFPROBE_PATH` 指定完整路径。视频会在本机生成均匀候选与场景变化候选，经过相邻画面去重和图片预算选择后，只有最终 JPEG 帧会发送给视觉模型。
 
 ## 图片与处理限制
 
