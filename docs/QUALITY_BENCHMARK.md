@@ -17,6 +17,26 @@
 
 原始报告写入已被 Git 忽略的 `.visionkit-mcp/`：`zai-vision-comparison.json` 和 `zai-vision-comparison-ui_diff.json`。
 
+## 期7 custom-only 重构后复测
+
+2026-07-13 在 custom-only 配置收敛（统一 `Authorization: Bearer`、`VISIONKIT_*` 三件套）落地后，用同一组 4 个样本重跑对照，确认重构链路质量无回退。VisionKit 侧通过 `VISIONKIT_BASE_URL=https://api.xiaomimimo.com/v1` + `VISIONKIT_MODEL=mimo-v2.5` 接入，验证统一 Bearer 下小米 MiMo 端点可正常调用（旧版基于 hostname 的 `api-key:` 特判已移除）。
+
+| 样本 | 质量观察 | VisionKit 耗时 | 智谱官方耗时 |
+| --- | --- | ---: | ---: |
+| OCR | 双方均完整提取密集表格与散点标签；VisionKit 更贴 prompt、不超额发挥 | 10.5 秒 | 38.4 秒 |
+| 技术图 | 均识别 5 节点 5 连线；官方额外给出架构评价与 Mermaid 图，含图外推断 | 11.7 秒 | 30.0 秒 |
+| 报错诊断 | 根因均正确；VisionKit 给出精确 `:18:24` 位置，官方修复建议更展开但漏列号 | 9.6 秒 | 25.7 秒 |
+| UI 差异 | VisionKit 列出 8 条差异并诚实标注像素值不可测；官方仅判“约 90% 相似”，严重漏检 | 19.7 秒 | 43.5 秒 |
+
+本轮单工具平均耗时约为 VisionKit 12.9 秒、智谱官方 34.4 秒。离线评分（基于 `test/quality/quality-manifest.json`）为：
+
+| 实现 | 平均关键事实召回 | 格式遵从 | 无依据命中 |
+| --- | ---: | ---: | ---: |
+| VisionKit + mimo-v2.5 | 100% | 4 / 4 | 0 |
+| 智谱官方 MCP + GLM-4.6V | 62.5% | 1 / 4 | 3 |
+
+与 2026-07-12 基线趋势一致：VisionKit 更快（约 2.7 倍）、事实召回更高、推断更诚实。该结论仍只代表这 4 组开发者任务样本，不能外推为 mimo-v2.5 模型全面优于 GLM-4.6V；智谱官方的超额详尽在需要长篇解释的场景下也可能是优点。原始报告写入已被 Git 忽略的 `.visionkit-mcp/zai-vision-comparison.json`。
+
 ## 期6离线评分与证据约束
 
 已提交的 `test/quality/quality-manifest.json` 将上述四组样本的直接事实、格式要求和已知无依据表述写为机器可读规则。`src/quality/scorer.ts` 以关键事实召回、无依据命中、格式遵从、耗时和轮次评分；它不调用模型，也不把开放式自然语言评价伪装为客观分数。
