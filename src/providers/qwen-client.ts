@@ -1,3 +1,4 @@
+/** Dormant: 保留供未来 live-probe 兼容性矩阵恢复使用，见 AGENTS.md。custom-only 模式下不触达。 */
 import type { VisionKitConfig } from "../config.js";
 import { resolveCapabilities } from "./capabilities.js";
 import { BaseVisionClient, type HttpClientFactory, type TransportConfig } from "./base-client.js";
