@@ -60,12 +60,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MasterSapphireStar/visionkit-mcp.git"
+    "url": "git+https://github.com/Juvorix/visionkit-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/MasterSapphireStar/visionkit-mcp/issues"
+    "url": "https://github.com/Juvorix/visionkit-mcp/issues"
   },
-  "homepage": "https://github.com/MasterSapphireStar/visionkit-mcp#readme",
+  "homepage": "https://github.com/Juvorix/visionkit-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.4",
     "axios": "^1.15.1",

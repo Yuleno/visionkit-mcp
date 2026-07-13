@@ -19,7 +19,7 @@ function printConfigSnippet(endpoint: string, model: string): void {
       "visionkit-mcp": {
         type: "stdio",
         command: "npx",
-        args: ["-y", "visionkit-mcp"],
+        args: ["-y", "github:Juvorix/visionkit-mcp"],
         env: {
           VISIONKIT_API_KEY: "<在此粘贴你的 API key>",
           VISIONKIT_BASE_URL: endpoint,
