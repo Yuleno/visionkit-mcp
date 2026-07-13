@@ -25,3 +25,6 @@ Thumbs.db
 
 # 本地图片验证
 imageTest/
+
+# 开发过程文档（subagent brief/report 等本地过程记录，不随仓库分发）
+.superpowers/
