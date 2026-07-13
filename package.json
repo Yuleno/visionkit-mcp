@@ -1,7 +1,8 @@
 {
   "name": "visionkit-mcp",
-  "version": "1.5.0",
-  "description": "Multi-model vision understanding MCP server with specialized tools (UI-to-code, OCR, error diagnosis, diagram, chart, UI diff). Forked from luma-mcp.",
+  "version": "1.5.1",
+  "private": true,
+  "description": "Personal OpenAI-compatible vision MCP server for screenshot, UI, OCR and short-video analysis.",
   "type": "module",
   "files": [
     "build/",
@@ -38,23 +39,12 @@
   "keywords": [
     "mcp",
     "vision",
-    "ai",
-    "glm-4.6v",
-    "zhipu",
-    "deepseek-ocr",
-    "siliconflow",
-    "qwen3-vl",
-    "aliyun",
-    "dashscope",
-    "doubao",
-    "volcengine",
-    "ark",
+    "openai-compatible",
     "ocr",
-    "free",
     "image-understanding",
-    "multi-model",
     "visionkit",
-    "specialized-tools"
+    "specialized-tools",
+    "video-analysis"
   ],
   "author": "jinyu",
   "license": "MIT",

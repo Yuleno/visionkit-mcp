@@ -102,7 +102,7 @@ export function loadConfig(): VisionKitConfig {
   if (modelProvider && modelProvider !== "custom") {
     throw new Error(
       `MODEL_PROVIDER=${modelProvider} is no longer supported. VisionKit is now custom-only. ` +
-        `Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL instead. See README migration notes.`
+        `Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL instead. See the README configuration section.`
     );
   }
 

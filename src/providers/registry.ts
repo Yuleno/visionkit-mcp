@@ -15,7 +15,7 @@ export function createClient(config: VisionKitConfig): VisionClient {
   const factory = CLIENT_REGISTRY[config.provider];
   if (!factory) {
     throw new Error(
-      `Unsupported provider: ${config.provider}. VisionKit is custom-only; set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL. See README migration notes.`
+      `Unsupported provider: ${config.provider}. VisionKit is custom-only; set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL. See the README configuration section.`
     );
   }
   return factory(config);

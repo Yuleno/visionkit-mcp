@@ -14,7 +14,7 @@
 - 期5首版 `video_analysis` 完成：本地FFmpeg均匀抽帧路径、专用prompt/handler、安全预算及mimo-v2.5真实验收已落地；clipboard/latest与grounding继续暂缓。
 - 期5.1智能关键帧完成：混合均匀/场景候选、颜色感知dHash去重、时序状态保留与失败降级已落地。
 - 期6质量基础设施首版完成：4组图片 manifest、离线评分器、评分 CLI、专项证据约束和 UI diff 未测量样式值防护已落地。
-- 期7 custom-only 收敛完成：产品入口改为 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三件套，统一 Bearer；`MODEL_PROVIDER` 非 custom 值报迁移错误；configure 改为打印配置片段不落盘；内置 5 家薄子类保留为 dormant。属破坏性变更，旧配置需按 README 迁移说明升级。
+- 期7 custom-only 收敛完成：产品入口改为 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三件套，统一 Bearer；`MODEL_PROVIDER` 非 custom 值报配置错误；configure 改为打印配置片段不落盘；内置 5 家薄子类保留为 dormant。旧配置不再支持。
 
 ## 已验证状态
 
