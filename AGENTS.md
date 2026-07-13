@@ -18,8 +18,8 @@
 ## Git 规则
 
 - 本项目已关联 GitHub 仓库 `Juvorix/visionkit-mcp`。
-- 不执行 `git push`、不创建远程 PR，除非用户明确要求。
-- 可以在用户要求时创建本地 commit，commit message 使用中文。
+- 默认允许 `git commit` 与 `git push`（包括 force-push 这种 history rewrite 同步所需场景）；commit message 使用中文。
+- 创建远程 PR 前先与用户确认。
 - 工作区可能存在用户未提交改动，严禁回滚、覆盖或清理非本人改动。
 - 不使用 `git reset --hard`、`git checkout -- <file>` 等破坏性命令，除非用户明确指定。
 
