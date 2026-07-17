@@ -25,8 +25,6 @@ export interface VisionClient {
   readonly model: string;
   readonly capabilities: Capabilities;
   analyze(request: VisionRequest): Promise<VisionResult>;
-  /** @deprecated 使用 analyze(request)，仅保留给旧的本地脚本。 */
-  analyzeImage(imageDataUrl: string | string[], prompt: string, enableThinking?: boolean): Promise<string>;
   getModelName(): string;
 }
 

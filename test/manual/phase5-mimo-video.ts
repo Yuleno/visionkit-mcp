@@ -2,12 +2,13 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import path from "node:path";
+import { VERSION } from "../../src/version.js";
 
 const video = path.resolve(process.argv[2] || ".visionkit-mcp/phase5-video-smoke.mp4");
 const baseEnv = Object.fromEntries(
   Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === "string")
 );
-const client = new Client({ name: "visionkit-phase5-video-smoke", version: "1.0.0" });
+const client = new Client({ name: "visionkit-phase5-video-smoke", version: VERSION });
 const transport = new StdioClientTransport({
   command: process.execPath,
   args: ["build/index.js"],

@@ -17,6 +17,7 @@ import { createClient } from "./providers/registry.js";
 import { TOOL_DEFS } from "./tools/definitions.js";
 import { makeHandler } from "./tools/handler.js";
 import { makeVideoHandler } from "./tools/video-handler.js";
+import { VERSION } from "./version.js";
 
 /**
  * 创建 MCP 服务器
@@ -41,7 +42,7 @@ async function createServer() {
   const server = new McpServer(
     {
       name: "visionkit-mcp",
-      version: "1.0.0",
+      version: VERSION,
     },
     {
       capabilities: {
@@ -68,16 +69,16 @@ async function createServer() {
       );
       continue;
     }
-    // cast: makeHandler 返回的 StructuredSuccess 是闭合 interface(无 index signature),
-    // 与 SDK CallToolResult(带 [x:string]:unknown)直接赋值会报 TS2769。
-    // 期3 用 registerTool + outputSchema 后可消除此 cast。
-    server.tool(
+    server.registerTool(
       def.name,
-      def.description,
-      def.inputShape,
-      (def.media === "video"
+      {
+        description: def.description,
+        inputSchema: def.inputShape,
+        outputSchema: def.outputShape,
+      },
+      def.media === "video"
         ? makeVideoHandler(visionClient, config, capabilities.maxImages)
-        : makeHandler(def, visionClient, config, capabilities)) as never
+        : makeHandler(def, visionClient, config, capabilities)
     );
   }
 

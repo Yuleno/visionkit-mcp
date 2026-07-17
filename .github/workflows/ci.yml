@@ -28,4 +28,5 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:unit
       - run: npm run build
+      - run: npm run test:smoke
       - run: npm pack --dry-run --ignore-scripts

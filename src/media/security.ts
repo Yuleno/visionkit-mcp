@@ -1,5 +1,5 @@
 /**
- * 媒体读取的安全边界。纯函数保持可确定性测试，I/O 由 image-processor 注入/调用。
+ * 媒体读取的安全边界。纯函数保持可确定性测试，I/O 由 image-source 注入/调用。
  */
 import path from "node:path";
 import { isIPv6 } from "node:net";

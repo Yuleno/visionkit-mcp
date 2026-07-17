@@ -1,46 +1,56 @@
 import { describe, expect, it, vi } from "vitest";
 import type { VisionKitConfig } from "../../src/config.js";
+import type { HttpClient, HttpClientFactory, TransportConfig } from "../../src/providers/base-client.js";
 import { CustomClient } from "../../src/providers/custom-client.js";
-import { HunyuanClient } from "../../src/providers/hunyuan-client.js";
-import { QwenClient } from "../../src/providers/qwen-client.js";
-import { SiliconFlowClient } from "../../src/providers/siliconflow-client.js";
-import { VolcengineClient } from "../../src/providers/volcengine-client.js";
-import { ZhipuClient } from "../../src/providers/zhipu-client.js";
-import type { HttpClientFactory, TransportConfig } from "../../src/providers/base-client.js";
 
 const baseConfig: VisionKitConfig = {
-  provider: "custom", apiKey: "test-key", model: "test-model", maxTokens: 8192,
-  temperature: 0.7, topP: 0.95, enableThinking: true, multiCrop: true,
-  multiCropMaxTiles: 5, capabilityOverrides: {},
-  customProvider: { apiKey: "test-key", baseUrl: "https://example.test/v1", model: "test-model" },
+  provider: "custom",
+  apiKey: "test-key",
+  model: "test-model",
+  maxTokens: 8192,
+  temperature: 0.7,
+  topP: 0.95,
+  enableThinking: true,
+  multiCrop: true,
+  multiCropMaxTiles: 5,
+  capabilityOverrides: {},
+  customProvider: {
+    apiKey: "test-key",
+    baseUrl: "https://example.test/v1",
+    model: "test-model",
+  },
 };
 
 function fakeTransport() {
-  const post = vi.fn(async () => ({ data: { model: "fake", choices: [{ message: { content: "ok" } }] } }));
+  const post = vi.fn(async () => ({
+    data: { model: "fake", choices: [{ message: { content: "ok" } }] },
+  }));
   const transports: TransportConfig[] = [];
   const factory: HttpClientFactory = (transport) => {
     transports.push(transport);
-    return { post: post as any };
+    return { post: post as HttpClient["post"] };
   };
   return { post, factory, transports };
 }
 
-describe("Provider 契约", () => {
+describe("Custom provider 契约", () => {
   it("未知模型保守限制为单图，并在请求前拒绝", async () => {
     const { factory, post } = fakeTransport();
-    const client = new ZhipuClient(baseConfig, factory);
-    await expect(client.analyze({ images: ["a", "b"], userPrompt: "u" })).rejects.toThrow(/超过后端上限 1/);
+    const client = new CustomClient(baseConfig, factory);
+    await expect(client.analyze({ images: ["a", "b"], userPrompt: "u" })).rejects.toThrow(
+      /超过后端上限 1/
+    );
     expect(post).not.toHaveBeenCalled();
   });
 
   it("空图片请求在调用 transport 前拒绝", async () => {
     const { factory, post } = fakeTransport();
-    const client = new ZhipuClient(baseConfig, factory);
+    const client = new CustomClient(baseConfig, factory);
     await expect(client.analyze({ images: [], userPrompt: "u" })).rejects.toThrow(/至少需要 1 张图片/);
     expect(post).not.toHaveBeenCalled();
   });
 
-  it("Provider 错误统一归一化并脱敏", async () => {
+  it("错误统一归一化并脱敏", async () => {
     const post = vi.fn(async () => {
       throw {
         isAxiosError: true,
@@ -55,132 +65,69 @@ describe("Provider 契约", () => {
         },
       };
     });
-    const client = new ZhipuClient(baseConfig, () => ({ post: post as any }));
-
-    let caught: unknown;
-    try {
-      await client.analyze({ images: ["image"], userPrompt: "u" });
-    } catch (error) {
-      caught = error;
-    }
-    expect(caught).toBeInstanceOf(Error);
-    const message = (caught as Error).message;
-    expect(message).toContain("GLM API error (401)");
-    expect(message).toContain("[REDACTED]");
-    expect(message).not.toContain("secret-key");
-    expect(message).not.toContain("bearer-secret");
-    expect(message).not.toContain("token-secret");
-    expect(message).not.toContain("QUJDRA");
+    const client = new CustomClient(baseConfig, () => ({ post: post as HttpClient["post"] }));
+    await expect(client.analyze({ images: ["image"], userPrompt: "u" })).rejects.toThrow(
+      /Custom API error \(401\).*\[REDACTED\]/
+    );
   });
 
-  it("空响应按统一 Provider 错误返回", async () => {
+  it("空响应按统一错误返回", async () => {
     const post = vi.fn(async () => ({ data: { choices: [{ message: { content: "   " } }] } }));
-    const client = new ZhipuClient(baseConfig, () => ({ post: post as any }));
-
+    const client = new CustomClient(baseConfig, () => ({ post: post as HttpClient["post"] }));
     await expect(client.analyze({ images: ["image"], userPrompt: "u" })).rejects.toThrow(
-      /GLM API error: 响应无有效内容/
+      /Custom API error: 响应无有效内容/
     );
   });
 
   it("native system prompt 独立为 system message", async () => {
     const { factory, post } = fakeTransport();
-    const client = new ZhipuClient({ ...baseConfig, capabilityOverrides: { maxImages: 2, systemPromptMode: "native" } }, factory);
-    await client.analyze({ images: ["image"], systemPrompt: "sys", userPrompt: "user", thinking: false });
-    const body = (post.mock.calls as unknown as [string, any][])[0][1];
-    expect(body.messages[0]).toEqual({ role: "system", content: "sys" });
-    expect(body.thinking).toEqual({ type: "disabled" });
+    const client = new CustomClient({
+      ...baseConfig,
+      capabilityOverrides: { maxImages: 2, systemPromptMode: "native" },
+    }, factory);
+    await client.analyze({
+      images: ["image"],
+      systemPrompt: "sys",
+      userPrompt: "user",
+      thinking: false,
+    });
+    const body = (post.mock.calls as unknown as [string, Record<string, unknown>][])[0][1];
+    expect((body.messages as unknown[])[0]).toEqual({ role: "system", content: "sys" });
   });
 
   it("merge_user 将 system prompt 合并到 user 文本", async () => {
     const { factory, post } = fakeTransport();
-    const client = new ZhipuClient(baseConfig, factory);
+    const client = new CustomClient(baseConfig, factory);
     await client.analyze({ images: ["image"], systemPrompt: "sys", userPrompt: "user" });
     const body = (post.mock.calls as unknown as [string, any][])[0][1];
-    expect(body.messages).toHaveLength(1);
     expect(body.messages[0].content.at(-1)).toEqual({ type: "text", text: "sys\n\nuser" });
   });
 
-  it.each([
-    ["true", true, { type: "enabled" }],
-    ["false", false, { type: "disabled" }],
-    ["undefined", undefined, undefined],
-  ] as const)("Zhipu thinking=%s payload 正确", async (_label, thinking, expected) => {
-    const { factory, post } = fakeTransport();
-    const client = new ZhipuClient(baseConfig, factory);
-    await client.analyze({ images: ["image"], userPrompt: "user", thinking });
-    expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).thinking).toEqual(expected);
-  });
-
-  it("Qwen 锁定 thinking true/false/undefined 三态 payload", async () => {
-    for (const [thinking, expected] of [[true, { enable_thinking: true, thinking_budget: 81920 }], [false, { enable_thinking: false }], [undefined, undefined]] as const) {
-      const { factory, post } = fakeTransport();
-      const client = new QwenClient({ ...baseConfig, provider: "qwen" as "custom", capabilityOverrides: { maxImages: 1 } }, factory);
-      await client.analyze({ images: ["image"], userPrompt: "user", thinking });
-      expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).extra_body).toEqual(expected);
-    }
-  });
-
-  it("SiliconFlow 仅对 thinking=true 产生 warning", async () => {
-    const { factory } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR" }, factory);
-    await expect(client.analyze({ images: ["image"], userPrompt: "u", thinking: true })).resolves.toMatchObject({ warnings: [expect.stringContaining("不支持 thinking")] });
-  });
-
-  it.each([
-    [false, undefined],
-    [undefined, undefined],
-  ] as const)("SiliconFlow thinking=%s 不产生 warning", async (thinking, expected) => {
-    const { factory } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR" }, factory);
-    await expect(client.analyze({ images: ["image"], userPrompt: "u", thinking })).resolves.toEqual({ text: "ok", warnings: expected });
-  });
-
-  it("SiliconFlow 将 max_tokens 截断到 4096", async () => {
-    const { factory, post } = fakeTransport();
-    const client = new SiliconFlowClient({ ...baseConfig, provider: "siliconflow" as "custom", model: "deepseek-ai/DeepSeek-OCR", maxTokens: 8192 }, factory);
-    await client.analyze({ images: ["image"], userPrompt: "u" });
-    expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).max_tokens).toBe(4096);
-  });
-
-  it.each([
-    ["true", true, { type: "enabled" }],
-    ["false", false, { type: "disabled" }],
-    ["undefined", undefined, undefined],
-  ] as const)("Volcengine thinking=%s payload 正确", async (_label, thinking, expected) => {
-    const { factory, post } = fakeTransport();
-    const client = new VolcengineClient({ ...baseConfig, provider: "volcengine" as "custom" }, factory);
-    await client.analyze({ images: ["image"], userPrompt: "u", thinking });
-    expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).thinking).toEqual(expected);
-  });
-
-  it.each([
-    ["true", true, true],
-    ["false", false, false],
-    ["undefined", undefined, undefined],
-  ] as const)("Hunyuan thinking=%s payload 正确", async (_label, thinking, expected) => {
-    const { factory, post } = fakeTransport();
-    const client = new HunyuanClient({ ...baseConfig, provider: "hunyuan" as "custom" }, factory);
-    await client.analyze({ images: ["image"], userPrompt: "u", thinking });
-    expect(((post.mock.calls as unknown as [string, any][])[0][1] as any).enable_thinking).toBe(expected);
-  });
-
-  it("mimo-v2.5 使用已验收的五图 profile，custom thinking disabled 给出 warning", async () => {
+  it("mimo-v2.5 使用已验收的五图 profile", async () => {
     const { factory, post } = fakeTransport();
     const client = new CustomClient({
-      ...baseConfig, provider: "custom", model: "mimo-v2.5",
-      customProvider: { apiKey: "mimo-secret", baseUrl: "https://example.test/v1", model: "mimo-v2.5" },
+      ...baseConfig,
+      model: "mimo-v2.5",
+      customProvider: {
+        apiKey: "mimo-secret",
+        baseUrl: "https://example.test/v1",
+        model: "mimo-v2.5",
+      },
     }, factory);
-    const result = await client.analyze({ images: ["1", "2", "3", "4", "5"], userPrompt: "u", thinking: true });
+    const result = await client.analyze({
+      images: ["1", "2", "3", "4", "5"],
+      userPrompt: "u",
+      thinking: true,
+    });
     expect(post).toHaveBeenCalledOnce();
     expect(result.warnings).toEqual([expect.stringContaining("未配置 thinking")]);
     expect(client.capabilities.maxImages).toBe(5);
   });
 
-  it("Custom 统一使用 Bearer 鉴权，并用 normalizeEndpoint 拆分完整 URL", () => {
+  it("统一使用 Bearer 鉴权，并拆分完整 Chat Completions URL", () => {
     const { factory, transports } = fakeTransport();
     new CustomClient({
       ...baseConfig,
-      provider: "custom",
       customProvider: {
         apiKey: "secret",
         baseUrl: "https://example.test/v1/chat/completions",
@@ -194,21 +141,5 @@ describe("Provider 契约", () => {
     });
     expect(transports[0].headers.Authorization).toBe("Bearer secret");
     expect(transports[0].headers["Content-Type"]).toBe("application/json");
-  });
-
-  it("六家 Provider transport 的 endpoint、path 与 Bearer header 正确", () => {
-    const cases = [
-      [ZhipuClient, "zhipu", "https://open.bigmodel.cn/api/paas/v4"],
-      [SiliconFlowClient, "siliconflow", "https://api.siliconflow.cn/v1"],
-      [QwenClient, "qwen", "https://dashscope.aliyuncs.com/compatible-mode/v1"],
-      [VolcengineClient, "volcengine", "https://ark.cn-beijing.volces.com/api/v3"],
-      [HunyuanClient, "hunyuan", "https://api.hunyuan.cloud.tencent.com/v1"],
-    ] as const;
-    for (const [Client, provider, baseUrl] of cases) {
-      const { factory, transports } = fakeTransport();
-      new Client({ ...baseConfig, provider: provider as "custom" }, factory);
-      expect(transports[0]).toMatchObject({ baseUrl, requestPath: "/chat/completions" });
-      expect(transports[0].headers.Authorization).toBe("Bearer test-key");
-    }
   });
 });

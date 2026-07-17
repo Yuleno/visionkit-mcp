@@ -9,6 +9,7 @@ import { createClient } from "../../src/providers/registry.js";
 import { makeHandler } from "../../src/tools/handler.js";
 import { TOOL_DEFS } from "../../src/tools/definitions.js";
 import type { VisionClient } from "../../src/providers/vision-client.js";
+import { VERSION } from "../../src/version.js";
 
 const synthetic = process.argv.includes("--synthetic");
 const image = path.resolve(synthetic ? ".visionkit-mcp/phase4-zoom-synthetic.png" : (process.argv[2] || "imageTest/deepswe.png"));
@@ -20,7 +21,7 @@ const baseEnv = Object.fromEntries(
 );
 
 async function run(enabled: boolean) {
-  const client = new Client({ name: `visionkit-phase4-${enabled ? "on" : "off"}`, version: "1.0.0" });
+  const client = new Client({ name: `visionkit-phase4-${enabled ? "on" : "off"}`, version: VERSION });
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: ["build/index.js"],
@@ -84,7 +85,6 @@ async function runForcedZoom() {
       }
       return realClient.analyze(request);
     },
-    analyzeImage: (imageDataUrl, text, thinking) => realClient.analyzeImage(imageDataUrl, text, thinking),
     getModelName: () => realClient.getModelName(),
   };
   const def = TOOL_DEFS.find(item => item.name === "extract_text_from_screenshot")!;

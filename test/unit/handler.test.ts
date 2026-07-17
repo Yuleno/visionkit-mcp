@@ -18,7 +18,6 @@ function fakeClient(capture?: { prompt?: string }): VisionClient {
         return { text: "模型返回的分析结果" };
       }
     ),
-    analyzeImage: async () => "模型返回的分析结果",
     getModelName: () => "fake-model",
   };
 }

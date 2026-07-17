@@ -1,6 +1,7 @@
 import { createInterface } from "readline/promises";
 import { stdin as defaultInput, stdout as defaultOutput } from "process";
 import { pathToFileURL } from "url";
+import { GITHUB_NPX_SPEC } from "./version.js";
 
 interface ConfigureAnswers {
   endpoint: string;
@@ -19,7 +20,7 @@ function printConfigSnippet(endpoint: string, model: string): void {
       "visionkit-mcp": {
         type: "stdio",
         command: "npx",
-        args: ["-y", "github:Juvorix/visionkit-mcp"],
+        args: ["-y", GITHUB_NPX_SPEC],
         env: {
           VISIONKIT_API_KEY: "<在此粘贴你的 API key>",
           VISIONKIT_BASE_URL: endpoint,

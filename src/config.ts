@@ -59,6 +59,25 @@ const AgenticZoomSchema = z.object({
   maxZoomRounds: z.coerce.number().int().refine(value => value === 1, "首版仅支持 1 轮 Zoom").default(1),
 });
 
+const RuntimeConfigSchema = z.object({
+  apiKey: z.string({ required_error: "VISIONKIT_API_KEY is required" })
+    .trim().min(1, "VISIONKIT_API_KEY is required"),
+  baseUrl: z.string({ required_error: "VISIONKIT_BASE_URL is required" })
+    .trim().url("VISIONKIT_BASE_URL must be a valid URL").refine(
+    (value) => value.startsWith("https://") || value.startsWith("http://"),
+    "VISIONKIT_BASE_URL must use http or https"
+  ),
+  model: z.string({ required_error: "VISIONKIT_MODEL is required" })
+    .trim().min(1, "VISIONKIT_MODEL is required"),
+  maxTokens: z.coerce.number().int().positive().max(1_000_000).default(8192),
+  temperature: z.coerce.number().min(0).max(2).default(0.7),
+  topP: z.coerce.number().min(0).max(1).default(0.95),
+  enableThinking: EnvBoolean.default("true"),
+  multiCrop: EnvBoolean.default("true"),
+  multiCropMaxTiles: z.coerce.number().int().min(1).max(20).default(5),
+  baseVisionPrompt: z.string().optional(),
+});
+
 const VideoConfigSchema = z.object({
   maxSizeMB: z.coerce.number().positive().max(100).default(100),
   maxDurationSeconds: z.coerce.number().positive().max(120).default(120),
@@ -97,41 +116,35 @@ export function loadConfig(): VisionKitConfig {
     ffprobePath: process.env.VISIONKIT_FFPROBE_PATH,
   });
 
-  // 迁移守卫：显式设置非 custom 的 MODEL_PROVIDER 时给出明确迁移指引
-  const modelProvider = process.env.MODEL_PROVIDER?.toLowerCase().trim();
-  if (modelProvider && modelProvider !== "custom") {
-    throw new Error(
-      `MODEL_PROVIDER=${modelProvider} is no longer supported. VisionKit is now custom-only. ` +
-        `Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL instead. See the README configuration section.`
-    );
-  }
-
-  const apiKey = process.env.VISIONKIT_API_KEY?.trim();
-  const baseUrl = process.env.VISIONKIT_BASE_URL?.trim();
-  const model = process.env.VISIONKIT_MODEL?.trim();
-
-  if (!apiKey) {
-    throw new Error("VISIONKIT_API_KEY is required. Set it in your MCP client env.");
-  }
-  if (!baseUrl) {
-    throw new Error("VISIONKIT_BASE_URL is required (e.g. https://your-provider.example/v1).");
-  }
-  if (!model) {
-    throw new Error("VISIONKIT_MODEL is required (e.g. your-model-name).");
-  }
+  const runtime = RuntimeConfigSchema.parse({
+    apiKey: process.env.VISIONKIT_API_KEY,
+    baseUrl: process.env.VISIONKIT_BASE_URL,
+    model: process.env.VISIONKIT_MODEL,
+    maxTokens: process.env.MAX_TOKENS,
+    temperature: process.env.TEMPERATURE,
+    topP: process.env.TOP_P,
+    enableThinking: process.env.ENABLE_THINKING,
+    multiCrop: process.env.MULTI_CROP,
+    multiCropMaxTiles: process.env.MULTI_CROP_MAX_TILES,
+    baseVisionPrompt: process.env.BASE_VISION_PROMPT,
+  });
 
   return {
     provider: "custom",
-    apiKey,
-    model,
-    maxTokens: parseInt(process.env.MAX_TOKENS || "8192", 10),
-    temperature: parseFloat(process.env.TEMPERATURE || "0.7"),
-    topP: parseFloat(process.env.TOP_P || "0.95"),
-    enableThinking: process.env.ENABLE_THINKING !== "false",
-    multiCrop: process.env.MULTI_CROP !== "false",
-    multiCropMaxTiles: parseInt(process.env.MULTI_CROP_MAX_TILES || "5", 10),
-    baseVisionPrompt: process.env.BASE_VISION_PROMPT,
-    customProvider: { apiKey, baseUrl, model },
+    apiKey: runtime.apiKey,
+    model: runtime.model,
+    maxTokens: runtime.maxTokens,
+    temperature: runtime.temperature,
+    topP: runtime.topP,
+    enableThinking: runtime.enableThinking,
+    multiCrop: runtime.multiCrop,
+    multiCropMaxTiles: runtime.multiCropMaxTiles,
+    baseVisionPrompt: runtime.baseVisionPrompt,
+    customProvider: {
+      apiKey: runtime.apiKey,
+      baseUrl: runtime.baseUrl,
+      model: runtime.model,
+    },
     capabilityOverrides,
     agenticZoom,
     video,

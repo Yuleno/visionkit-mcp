@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { prepareVisionImageInput } from "../../src/image-processor.js";
+import { prepareVisionImageInput } from "../../src/media/prepare-image.js";
 import path from "path";
 
 describe("prepareVisionImageInput preferTextUsed", () => {

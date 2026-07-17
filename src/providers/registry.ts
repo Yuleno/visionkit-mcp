@@ -2,11 +2,7 @@ import type { VisionKitConfig } from "../config.js";
 import { CustomClient } from "./custom-client.js";
 import type { VisionClient } from "./vision-client.js";
 
-/**
- * custom-only：注册表只暴露 custom。
- * 内置五家薄子类（zhipu/siliconflow/qwen/volcengine/hunyuan）保留为 dormant，
- * 见各文件顶部注释与 AGENTS.md，未来建立 live-probe 兼容性矩阵后再恢复。
- */
+/** custom-only：产品入口只注册 OpenAI 兼容的 custom client。 */
 export const CLIENT_REGISTRY: Record<string, (config: VisionKitConfig) => VisionClient> = {
   custom: (config) => new CustomClient(config),
 };

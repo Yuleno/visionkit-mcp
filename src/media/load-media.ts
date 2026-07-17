@@ -1,4 +1,4 @@
-import { loadValidatedImageBuffer } from "../image-processor.js";
+import { loadValidatedImageBuffer } from "./image-source.js";
 import type { MediaItem } from "./detail-strategy.js";
 
 export interface LoadedMedia {

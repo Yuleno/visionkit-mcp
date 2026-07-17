@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchRemoteImage, type RemoteImageDependencies } from "../../src/image-processor.js";
+import { fetchRemoteImage, type RemoteImageDependencies } from "../../src/media/image-source.js";
 
 function fakeDependencies(address: string) {
   let capturedConfig: Record<string, any> | undefined;

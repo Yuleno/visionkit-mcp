@@ -4,6 +4,7 @@
  */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { VERSION } from "../../src/version.js";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -71,7 +72,7 @@ async function runServer(
   options: ConstructorParameters<typeof StdioClientTransport>[0],
   selectedCases: readonly ComparisonCase[]
 ) {
-  const client = new Client({ name: `visionkit-compare-${label}`, version: "1.0.0" });
+  const client = new Client({ name: `visionkit-compare-${label}`, version: VERSION });
   const transport = new StdioClientTransport(options);
   await client.connect(transport);
   try {

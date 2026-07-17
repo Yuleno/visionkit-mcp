@@ -1,6 +1,6 @@
 {
   "name": "visionkit-mcp",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "private": true,
   "description": "Personal OpenAI-compatible vision MCP server for screenshot, UI, OCR and short-video analysis.",
   "type": "module",
@@ -18,13 +18,15 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "prebuild": "node scripts/clean-build.mjs",
     "build": "tsc",
     "watch": "tsc --watch",
     "prepare": "npm run build",
     "configure": "tsx src/configure-cli.ts",
     "typecheck": "tsc -p tsconfig.check.json",
     "test:unit": "vitest run",
-    "test:local": "tsx test/test-local.ts",
+    "test:smoke": "npm run build && tsx test/manual/mcp-stdio-smoke.ts",
+    "test:local": "tsx test/manual/test-local.ts",
     "test:phase3-mimo": "npm run build && tsx test/manual/phase3-mimo-mcp.ts",
     "test:phase4-mimo": "npm run build && tsx test/manual/phase4-mimo-zoom-compare.ts",
     "test:phase4-mimo:synthetic": "npm run build && tsx test/manual/phase4-mimo-zoom-compare.ts --synthetic",

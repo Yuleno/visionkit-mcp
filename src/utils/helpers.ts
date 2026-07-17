@@ -62,6 +62,7 @@ export function createSuccessResponse(data: string) {
 }
 
 export interface StructuredSuccess {
+  [key: string]: unknown;
   content: Array<{ type: "text"; text: string }>;
   structuredContent: {
     text: string;

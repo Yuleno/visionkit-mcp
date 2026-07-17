@@ -1,7 +1,7 @@
 import type { VisionClient } from "../providers/vision-client.js";
 import type { PreparedImage, MediaItem, ResolvedDetailProfile } from "../media/detail-strategy.js";
 import type { LoadedMedia } from "../media/load-media.js";
-import { cropLoadedImage } from "../image-processor.js";
+import { cropLoadedImage } from "../media/image-crop.js";
 import { gridCellToRegion, parseZoomDecision, selectZoomCells } from "./zoom-loop.js";
 
 export interface ExecutionInput {

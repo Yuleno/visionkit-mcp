@@ -4,9 +4,10 @@
  */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import path from "node:path";
+import { VERSION } from "../../src/version.js";
 
-const image = path.resolve("test/fixtures/tiny.png");
+// 固定的无敏感 1×1 PNG；真实回归不读取或外发仓库/用户图片。
+const image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 const expectedTools = [
   "image_analysis",
   "extract_text_from_screenshot",
@@ -28,8 +29,16 @@ const calls: Array<{ name: string; arguments: Record<string, string> }> = [
 ];
 
 async function main() {
-  const client = new Client({ name: "visionkit-phase3-mimo-smoke", version: "1.0.0" });
-  const transport = new StdioClientTransport({ command: process.execPath, args: ["build/index.js"], cwd: process.cwd() });
+  const client = new Client({ name: "visionkit-phase3-mimo-smoke", version: VERSION });
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === "string")
+  );
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: ["build/index.js"],
+    cwd: process.cwd(),
+    env,
+  });
   await client.connect(transport);
 
   try {

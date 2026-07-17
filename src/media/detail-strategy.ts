@@ -1,4 +1,5 @@
-import { processBufferVariants, encodeLoadedOverview } from "../image-processor.js";
+import { processBufferVariants } from "./image-crop.js";
+import { encodeBufferToDataUrl } from "./image-transform.js";
 import { TEXT_HEAVY_PROMPT_PATTERN } from "../constants.js";
 import type { LoadedMedia } from "./load-media.js";
 
@@ -61,7 +62,7 @@ export function validateItems(items: readonly MediaItem[], media: "image" | "two
 function preferTextForProfile(profile: PreparationProfile): boolean | undefined {
   if (profile === "text") return true;
   if (profile === "balanced" || profile === "overview") return false;
-  return undefined; // infer:交给 image-processor 启发式
+  return undefined; // infer：交给 image-transform 启发式
 }
 
 function resolvedFromPreferText(preferTextUsed: boolean): ResolvedDetailProfile {
@@ -87,7 +88,7 @@ export class FixedMultiCropPreparation implements ImagePreparationStrategy {
 
       if (input.profile === "overview") {
         // 单图不裁剪
-        const dataUrl = await encodeLoadedOverview(media.buffer, media.mimeType, false);
+        const dataUrl = await encodeBufferToDataUrl(media.buffer, media.mimeType, false);
         images.push({ dataUrl, role: item.role, view: "overview", sourceIndex: idx });
         profiles.push("balanced");
       } else {

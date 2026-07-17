@@ -75,15 +75,6 @@ export abstract class BaseVisionClient implements VisionClient {
     return `${this.name} (${this.model})`;
   }
 
-  async analyzeImage(imageDataUrl: string | string[], prompt: string, enableThinking?: boolean): Promise<string> {
-    const result = await this.analyze({
-      images: Array.isArray(imageDataUrl) ? imageDataUrl : [imageDataUrl],
-      userPrompt: prompt,
-      thinking: enableThinking,
-    });
-    return result.text;
-  }
-
   protected buildBody(request: VisionRequest): { body: RequestBody; warnings: string[] } {
     const body: RequestBody = {
       model: this.model,

@@ -1,6 +1,7 @@
 /** 期5.1真实验收：短暂黄色事件不会被均匀采样命中，但应被场景关键帧捕获。 */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { VERSION } from "../../src/version.js";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { buildSampleTimestamps, defaultProcessRunner, VideoFrameExtractor } from "../../src/media/video-frames.js";
@@ -30,7 +31,7 @@ if (!extracted.timestamps.some(time => time >= 1.9 && time <= 2.35)) {
 const env = Object.fromEntries(Object.entries(process.env).filter(
   (entry): entry is [string, string] => typeof entry[1] === "string"
 ));
-const client = new Client({ name: "visionkit-phase5-smart-frame-smoke", version: "1.0.0" });
+const client = new Client({ name: "visionkit-phase5-smart-frame-smoke", version: VERSION });
 const transport = new StdioClientTransport({ command: process.execPath, args: ["build/index.js"], cwd: process.cwd(), env });
 await client.connect(transport);
 try {
