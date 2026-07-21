@@ -48,7 +48,7 @@ claude mcp add visionkit-mcp --scope user \
   --env VISIONKIT_API_KEY=YOUR_API_KEY \
   --env VISIONKIT_BASE_URL=https://your-provider.example/v1 \
   --env VISIONKIT_MODEL=your-model \
-  -- npx -y github:Juvorix/visionkit-mcp#v1.6.0
+  -- npx -y github:Yuleno/visionkit-mcp#v1.6.0
 ```
 
 项目级配置只需将 `--scope user` 改为 `--scope project`。
@@ -63,7 +63,7 @@ claude mcp add visionkit-mcp --scope user \
     "visionkit-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "github:Juvorix/visionkit-mcp#v1.6.0"],
+      "args": ["-y", "github:Yuleno/visionkit-mcp#v1.6.0"],
       "env": {
         "VISIONKIT_API_KEY": "YOUR_API_KEY",
         "VISIONKIT_BASE_URL": "https://your-provider.example/v1",
