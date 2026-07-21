@@ -31,7 +31,7 @@
 - v1.6.0 重构后真实回归：使用代码内固定的无敏感 1×1 PNG Data URI，再次通过 mimo-v2.5 实际调用 7 个图片工具；前六个工具单图成功，`ui_diff_check` 双图成功，未读取或外发仓库/用户图片。
 - `npm pack --dry-run`：v1.6.0 通过，共123个条目；发布包只包含 NOTICE、README、package.json 与干净 build 产物，不包含测试、开发配置、密钥或已删除 provider 的陈旧产物。
 - `npm run test:smoke`：构建后的真实 stdio MCP 握手版本为 `1.6.0`，mimo-v2.5 能力下 `tools/list` 返回8个工具；不调用模型。
-- v1.6.1 公共发布验证：`npm run typecheck`、19个测试文件/112个用例、`npm run build`、真实 stdio smoke 全部通过；smoke 握手版本为 `1.6.1` 并返回8个工具。`npm pack --dry-run` 共124个条目，只含 LICENSE、NOTICE、README、package.json 与 build；生产依赖审计0漏洞，发布范围未发现疑似密钥。
+- v1.6.1 公共发布验证：`npm run typecheck`、19个测试文件/112个用例、`npm run build`、真实 stdio smoke 全部通过；npm registry 的 `latest` 已指向 `1.6.1`。发布包共124个条目，只含 LICENSE、NOTICE、README、package.json 与 build；生产依赖审计0漏洞，发布范围未发现疑似密钥。在全新临时目录通过 `npx -y visionkit-mcp@1.6.1` 完成真实 MCP 握手，服务版本为 `1.6.1`，`tools/list` 返回8个工具。
 - 期4真实对照：以 `imageTest/deepswe.png` 调用 OCR 工具，关闭/开启 Zoom 各执行1次。两次均为 `rounds=1`，mimo-v2.5 在开启时直接返回 final，未请求动态裁剪；两份 OCR 结果完整度基本一致。因此继续保持默认关闭，且动态裁剪分支尚不能标记为 live 验收完成。
 - 期4.1动态裁剪验收：自动生成4000×4000合成仪表盘，通过手动验收脚本注入右下角 `(2,2)` 决策，真实执行 LoadedMedia→3×3裁剪→mimo-v2.5 最终调用；返回正确验证码 `VK7Q-29MX-4P8R`、`rounds=2`，动态裁剪与最终调用链 live 通过。该结果不代表自动规划器一定会主动选择 Zoom。
 - 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
