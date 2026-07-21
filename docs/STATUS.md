@@ -1,7 +1,7 @@
 # VisionKit MCP 当前状态
 
 > 当前状态的唯一事实源。阶段、验收结果、已知问题或下一步发生变化时，只更新本文件。
-> 最近更新：2026-07-18。
+> 最近更新：2026-07-21。
 
 ## 当前阶段
 
@@ -15,6 +15,7 @@
 - 期6质量基础设施首版完成：4组图片 manifest、离线评分器、评分 CLI、专项证据约束和 UI diff 未测量样式值防护已落地。
 - 期7 custom-only 收敛完成：产品入口改为 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三件套，统一 Bearer；configure 打印配置片段不落盘。
 - 期8（v1.6.0）实现完成：图片管线拆分为 source/transform/crop/cache/prepare 五个职责模块；删除五个 dormant provider、旧 `analyzeImage`、过渡导出和遗留供应商脚本；运行配置统一经 Zod 校验；服务版本读取 `package.json`；GitHub npx 固定版本标签；新增真实 stdio MCP 冒烟与构建前清理。
+- 期8.1（v1.6.1）公共分发：GitHub 用户名统一为 `Yuleno`，npm 公共包成为主安装路径，GitHub npx 保留为备用；补齐 MIT LICENSE、第三方代码归属与 npm 发布保护。
 
 ## 已验证状态
 
@@ -30,6 +31,7 @@
 - v1.6.0 重构后真实回归：使用代码内固定的无敏感 1×1 PNG Data URI，再次通过 mimo-v2.5 实际调用 7 个图片工具；前六个工具单图成功，`ui_diff_check` 双图成功，未读取或外发仓库/用户图片。
 - `npm pack --dry-run`：v1.6.0 通过，共123个条目；发布包只包含 NOTICE、README、package.json 与干净 build 产物，不包含测试、开发配置、密钥或已删除 provider 的陈旧产物。
 - `npm run test:smoke`：构建后的真实 stdio MCP 握手版本为 `1.6.0`，mimo-v2.5 能力下 `tools/list` 返回8个工具；不调用模型。
+- v1.6.1 公共发布验证：`npm run typecheck`、19个测试文件/112个用例、`npm run build`、真实 stdio smoke 全部通过；smoke 握手版本为 `1.6.1` 并返回8个工具。`npm pack --dry-run` 共124个条目，只含 LICENSE、NOTICE、README、package.json 与 build；生产依赖审计0漏洞，发布范围未发现疑似密钥。
 - 期4真实对照：以 `imageTest/deepswe.png` 调用 OCR 工具，关闭/开启 Zoom 各执行1次。两次均为 `rounds=1`，mimo-v2.5 在开启时直接返回 final，未请求动态裁剪；两份 OCR 结果完整度基本一致。因此继续保持默认关闭，且动态裁剪分支尚不能标记为 live 验收完成。
 - 期4.1动态裁剪验收：自动生成4000×4000合成仪表盘，通过手动验收脚本注入右下角 `(2,2)` 决策，真实执行 LoadedMedia→3×3裁剪→mimo-v2.5 最终调用；返回正确验证码 `VK7Q-29MX-4P8R`、`rounds=2`，动态裁剪与最终调用链 live 通过。该结果不代表自动规划器一定会主动选择 Zoom。
 - 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
@@ -44,6 +46,7 @@
 
 - 期7 起改为 custom-only 三件套：`VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 环境变量直接提供连接信息。
 - 旧的开发期连接 profile（项目内 `.visionkit-mcp/config.json`）与 `VISIONKIT_CONFIG_FILE` 已随 custom-only 收敛移除。
+- v1.6.1 起优先通过 npm 固定版本安装；GitHub npx 仅作为备用，npm 12 使用 Git 依赖时需显式启用 `allow-git`。
 - 真实模型调用会消耗 API，执行前必须获得用户确认。
 
 ## 期3实现与验证边界
@@ -72,5 +75,6 @@
 - 文档导航：`docs/README.md`。
 - 项目使用说明：`README.md`。
 - 视觉质量基准：`docs/QUALITY_BENCHMARK.md`。
+- 2026-07-21 超时复盘：`docs/visionkit-mcp-timeout-issue-2026-07-21.md`。
 - 历史进度与已完成计划：`docs/archive/`。
 - 设计与计划：`docs/superpowers/`。

@@ -14,6 +14,7 @@
 | `AGENTS.md` | 面向开发代理的协作规则与项目入口 | 是 |
 | `docs/STATUS.md` | 当前状态、验收结果、已知问题和下一步的唯一事实源 | 是 |
 | `docs/QUALITY_BENCHMARK.md` | 视觉质量基准、模型对照结果与评分口径 | 是 |
+| `docs/visionkit-mcp-timeout-issue-2026-07-21.md` | 公司网络下模型请求超时的脱敏复盘与排查顺序 | 按复现结果更新 |
 | `docs/archive/` | 期1、期2历史流水及已完成设计、计划 | 否 |
 | `docs/superpowers/specs/` | 已确认的设计决策 | 按设计变更更新 |
 | `docs/superpowers/plans/` | 当前及后续期次实施计划 | 新任务新增，完成后归档 |

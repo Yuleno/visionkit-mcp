@@ -1,16 +1,16 @@
-visionkit-mcp
-Copyright (c) 2026 jinyu
+VisionKit MCP
+Copyright (c) 2026 Yuleno
 
-本项目包含并修改了 luma-mcp 的部分代码：
+本项目包含并修改了 luma-mcp 的部分代码。相关部分保留原版权声明，并依据 MIT License 再分发：
 
 - luma-mcp https://github.com/JochenYang/luma-mcp
   Copyright (c) 2025 Jochen
   License: MIT
 
-Agentic Zoom 与部分专项工具设计参考了 vision-mcp；当前未声明直接包含其代码：
+Agentic Zoom 与部分专项工具设计参考了 vision-mcp；当前未声明直接包含其代码，因此此处属于致谢而非第三方代码许可声明：
 
 - vision-mcp https://github.com/Pelican0126/vision-mcp
   Copyright (c) 2026 Pelican0126
   License: MIT
 
-感谢原作者的贡献。
+完整 MIT 许可证文本见根目录 LICENSE。感谢原作者的贡献。

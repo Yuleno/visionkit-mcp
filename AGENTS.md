@@ -17,7 +17,7 @@
 
 ## Git 规则
 
-- 本项目已关联 GitHub 仓库 `Juvorix/visionkit-mcp`。
+- 本项目已关联 GitHub 仓库 `Yuleno/visionkit-mcp`。
 - 默认允许 `git commit` 与 `git push`（包括 force-push 这种 history rewrite 同步所需场景）；commit message 使用中文。
 - 创建远程 PR 前先与用户确认。
 - 工作区可能存在用户未提交改动，严禁回滚、覆盖或清理非本人改动。

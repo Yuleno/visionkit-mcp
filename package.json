@@ -1,13 +1,13 @@
 {
   "name": "visionkit-mcp",
-  "version": "1.6.0",
-  "private": true,
-  "description": "Personal OpenAI-compatible vision MCP server for screenshot, UI, OCR and short-video analysis.",
+  "version": "1.6.1",
+  "description": "OpenAI-compatible vision MCP server for screenshot, UI, OCR and short-video analysis.",
   "type": "module",
   "files": [
     "build/",
     "package.json",
     "README.md",
+    "LICENSE",
     "NOTICE"
   ],
   "bin": {
@@ -22,6 +22,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "prepare": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm run test:unit && npm run test:smoke",
     "configure": "tsx src/configure-cli.ts",
     "typecheck": "tsc -p tsconfig.check.json",
     "test:unit": "vitest run",
@@ -48,16 +49,20 @@
     "specialized-tools",
     "video-analysis"
   ],
-  "author": "jinyu",
+  "author": "Yuleno",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Juvorix/visionkit-mcp.git"
+    "url": "git+https://github.com/Yuleno/visionkit-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/Juvorix/visionkit-mcp/issues"
+    "url": "https://github.com/Yuleno/visionkit-mcp/issues"
   },
-  "homepage": "https://github.com/Juvorix/visionkit-mcp#readme",
+  "homepage": "https://github.com/Yuleno/visionkit-mcp#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.4",
     "axios": "^1.15.1",

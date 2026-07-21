@@ -1,10 +1,10 @@
 # VisionKit MCP
 
-供个人开发使用的视觉 MCP 服务。它把 OpenAI 兼容的视觉模型接入 Claude Code 或其他 MCP 客户端，用于截图、UI、OCR、报错、技术图、图表和本地短视频分析。
+开源的视觉 MCP 服务。它把 OpenAI 兼容的视觉模型接入 Claude Code 或其他 MCP 客户端，用于截图、UI、OCR、报错、技术图、图表和本地短视频分析。
 
-## 通过 GitHub npx 使用
+## 通过 npm 使用
 
-VisionKit 不发布到 npm，MCP 客户端通过 GitHub 仓库拉取并启动。稳定使用固定 `v1.6.0` 标签；仓库保持私有时，运行环境需要具备该仓库的 GitHub 访问权限。
+推荐由 MCP 客户端通过 npm 拉取固定版本 `visionkit-mcp@1.6.1`。固定版本可避免上游更新影响现有配置；需要跟随最新版时可改用 `visionkit-mcp@latest`。
 
 ## 配置
 
@@ -28,13 +28,13 @@ VisionKit 只读取以下三项连接环境变量，并统一使用 `Authorizati
 **用户级**：本机所有 Claude Code 项目可用。
 
 ```powershell
-claude mcp add visionkit-mcp --scope user --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y "github:Juvorix/visionkit-mcp#v1.6.0"
+claude mcp add visionkit-mcp --scope user --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.6.1
 ```
 
 **项目级**：只在当前项目可用。
 
 ```powershell
-claude mcp add visionkit-mcp --scope project --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y "github:Juvorix/visionkit-mcp#v1.6.0"
+claude mcp add visionkit-mcp --scope project --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.6.1
 ```
 
 项目级配置会将 API key 写入项目的 `.mcp.json`。确认该文件已被忽略，且不要提交或分享包含真实 key 的配置。
@@ -48,14 +48,14 @@ claude mcp add visionkit-mcp --scope user \
   --env VISIONKIT_API_KEY=YOUR_API_KEY \
   --env VISIONKIT_BASE_URL=https://your-provider.example/v1 \
   --env VISIONKIT_MODEL=your-model \
-  -- npx -y github:Yuleno/visionkit-mcp#v1.6.0
+  -- npx -y visionkit-mcp@1.6.1
 ```
 
 项目级配置只需将 `--scope user` 改为 `--scope project`。
 
 ### 其他 MCP 客户端
 
-在客户端配置中使用 GitHub `npx` 入口：
+在客户端配置中使用 npm `npx` 入口：
 
 ```json
 {
@@ -63,7 +63,7 @@ claude mcp add visionkit-mcp --scope user \
     "visionkit-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "github:Yuleno/visionkit-mcp#v1.6.0"],
+      "args": ["-y", "visionkit-mcp@1.6.1"],
       "env": {
         "VISIONKIT_API_KEY": "YOUR_API_KEY",
         "VISIONKIT_BASE_URL": "https://your-provider.example/v1",
@@ -74,7 +74,11 @@ claude mcp add visionkit-mcp --scope user \
 }
 ```
 
-原生 Windows 客户端请把 `command` 改为 `cmd`，并把 `args` 改为 `["/c", "npx", "-y", "github:Juvorix/visionkit-mcp#v1.6.0"]`。需要跟随开发分支时才移除 `#v1.6.0`。
+原生 Windows 客户端请把 `command` 改为 `cmd`，并把 `args` 改为 `["/c", "npx", "-y", "visionkit-mcp@1.6.1"]`。
+
+### GitHub npx（备用）
+
+需要直接使用 GitHub 标签时，可运行 `npx -y github:Yuleno/visionkit-mcp#v1.6.1`。npm 12 默认禁止 Git 依赖，需要显式改为 `npx --allow-git=all -y github:Yuleno/visionkit-mcp#v1.6.1`；因此日常使用优先选择 npm 包。
 
 ### 生成配置片段（可选）
 
@@ -183,3 +187,7 @@ npm run test:phase5-smart
 ```
 
 详细的验证记录、已知限制和后续计划见 [docs/STATUS.md](./docs/STATUS.md)。
+
+## 许可证与致谢
+
+VisionKit MCP 采用 MIT 许可证，详见 [LICENSE](./LICENSE)。本项目包含并修改了 [luma-mcp](https://github.com/JochenYang/luma-mcp) 的部分代码；Agentic Zoom 与部分专项工具设计参考了 [vision-mcp](https://github.com/Pelican0126/vision-mcp)，当前未声明直接包含其代码。完整归属说明见 [NOTICE](./NOTICE)。
