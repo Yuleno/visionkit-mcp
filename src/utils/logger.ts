@@ -12,6 +12,8 @@ const SENSITIVE_KEY_PATTERN = /(api[-_]?key|authorization|token|secret|password)
 export function redactSensitiveText(value: string): string {
   return value
     .replace(/data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]+/gi, "data:image/[REDACTED]")
+    // Anthropic 图片块里的裸 base64（source.data，无 data: 前缀），防御错误消息反射时外泄。
+    .replace(/"data"\s*:\s*"[A-Za-z0-9+/=]{100,}"/g, '"data":"[REDACTED]"')
     .replace(/(Authorization\s*[:=]\s*)(?:Bearer|Basic)\s+[^\s,;}]+/gi, "$1[REDACTED]")
     .replace(/(Bearer\s+)[^\s,;}]+/gi, "$1[REDACTED]")
     .replace(

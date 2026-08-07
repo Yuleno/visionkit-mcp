@@ -12,6 +12,9 @@ export const DEFAULT_CAPABILITIES: Capabilities = {
 /** 只登记已验证或有明确文档依据的差异；未知能力保持保守回退。 */
 export const CAPABILITY_PROFILES: Record<string, Partial<Capabilities>> = {
   "custom/mimo-v2.5": { maxImages: 5, systemPromptMode: "merge_user" },
+  // 阿里云百炼 qwen3.6-plus：原生多模态视觉模型，URL 上限 256 图、Base64 上限 250 图，
+  // 5 远低于上限。协议无关能力（OpenAI/Anthropic 路径通用）。
+  "custom/qwen3.6-plus": { maxImages: 5 },
 };
 
 export function resolveCapabilities(

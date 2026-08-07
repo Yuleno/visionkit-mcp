@@ -1,10 +1,15 @@
 import type { VisionKitConfig } from "../config.js";
 import { CustomClient } from "./custom-client.js";
+import { AnthropicClient } from "./anthropic-client.js";
 import type { VisionClient } from "./vision-client.js";
 
-/** custom-only：产品入口只注册 OpenAI 兼容的 custom client。 */
+/**
+ * custom-only：产品入口按 config.protocol 选择 OpenAI 或 Anthropic transport。
+ * - openai: CustomClient（OpenAI Chat Completions 兼容端点）。
+ * - anthropic: AnthropicClient（Anthropic Messages 兼容端点，支持百炼/mimo/官方等任意多模态模型）。
+ */
 export const CLIENT_REGISTRY: Record<string, (config: VisionKitConfig) => VisionClient> = {
-  custom: (config) => new CustomClient(config),
+  custom: (config) => (config.protocol === "anthropic" ? new AnthropicClient(config) : new CustomClient(config)),
 };
 
 export function createClient(config: VisionKitConfig): VisionClient {

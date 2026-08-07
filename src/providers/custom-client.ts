@@ -1,7 +1,7 @@
 import type { VisionKitConfig } from "../config.js";
 import { resolveCapabilities } from "./capabilities.js";
 import { BaseVisionClient, type HttpClientFactory, type TransportConfig } from "./base-client.js";
-import { normalizeEndpoint } from "./request-path.js";
+import { resolveEndpoint } from "./request-path.js";
 
 const CUSTOM_TIMEOUT_MS = 60_000;
 
@@ -14,7 +14,7 @@ export class CustomClient extends BaseVisionClient {
         "CustomClient requires customProvider configuration. Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL environment variables."
       );
     }
-    const { baseURL, requestPath } = normalizeEndpoint(config.customProvider.baseUrl);
+    const { baseURL, requestPath } = resolveEndpoint(config.customProvider.baseUrl, "openai");
     const transport: TransportConfig = {
       baseUrl: baseURL,
       requestPath,

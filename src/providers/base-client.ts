@@ -57,11 +57,13 @@ export abstract class BaseVisionClient implements VisionClient {
     });
 
     try {
-      const response = await this.http.post(this.requestPath, body);
-      const text = this.extractContent(response.data);
+      const data = await this.sendRequest(body);
+      const text = this.extractContent(data);
+      const stopWarning = this.extractStopReasonWarning(data);
+      if (stopWarning) warnings.push(stopWarning);
       logger.info("Vision provider call successful", {
         provider: this.name,
-        model: response.data?.model ?? this.model,
+        model: (data as { model?: string } | null)?.model ?? this.model,
       });
       return { text, warnings: warnings.length ? warnings : undefined };
     } catch (error) {
@@ -102,7 +104,26 @@ export abstract class BaseVisionClient implements VisionClient {
     return messages;
   }
 
-  protected abstract applyThinking(body: RequestBody, thinking: boolean | undefined): string[];
+  protected applyThinking(body: RequestBody, thinking: boolean | undefined): string[] {
+    return [];
+  }
+
+  /**
+   * 发送请求并返回响应数据。默认走非流式 POST；AnthropicClient 可覆写为流式累积。
+   * 覆写时返回的对象形态应与 extractContent/extractStopReasonWarning 期望一致。
+   */
+  protected async sendRequest(body: RequestBody): Promise<unknown> {
+    const response = await this.http.post(this.requestPath, body);
+    return response.data;
+  }
+
+  /**
+   * 从响应中提取截断/异常停止的警告（如 Anthropic stop_reason==="max_tokens"）。
+   * 默认 no-op（OpenAI 路径不读 finish_reason）；Anthropic 子类可覆写。
+   */
+  protected extractStopReasonWarning(_data: unknown): string | undefined {
+    return undefined;
+  }
 
   protected extractContent(data: unknown): string {
     const content = (data as { choices?: Array<{ message?: { content?: unknown } }> })
