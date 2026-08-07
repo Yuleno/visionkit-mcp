@@ -7,6 +7,7 @@ interface ConfigureAnswers {
   endpoint: string;
   model: string;
   apiKey: string;
+  protocol?: string;
 }
 
 function normalizeEndpointUrl(endpoint: string): string {
@@ -14,24 +15,28 @@ function normalizeEndpointUrl(endpoint: string): string {
 }
 
 /** 打印一段可直接粘贴到 MCP 客户端的 stdio 配置片段；key 用占位符，真实 key 不进 stdout。 */
-function printConfigSnippet(endpoint: string, model: string): void {
+function printConfigSnippet(endpoint: string, model: string, protocol: "openai" | "anthropic"): void {
+  const env: Record<string, string> = {
+    VISIONKIT_API_KEY: "<在此粘贴你的 API key>",
+    VISIONKIT_BASE_URL: endpoint,
+    VISIONKIT_MODEL: model,
+    VISIONKIT_PROTOCOL: protocol,
+  };
   const snippet = {
     mcpServers: {
       "visionkit-mcp": {
         type: "stdio",
         command: "npx",
         args: ["-y", GITHUB_NPX_SPEC],
-        env: {
-          VISIONKIT_API_KEY: "<在此粘贴你的 API key>",
-          VISIONKIT_BASE_URL: endpoint,
-          VISIONKIT_MODEL: model,
-        },
+        env,
       },
     },
   };
   defaultOutput.write("\n把以下片段粘贴到你的 MCP 客户端配置：\n\n");
   defaultOutput.write(JSON.stringify(snippet, null, 2));
-  defaultOutput.write("\n\n已读取你的 endpoint 与 model；API key 请在粘贴到客户端后手动填入，不要提交到版本控制。\n");
+  defaultOutput.write(
+    `\n\n已读取你的 endpoint、model 与协议（${protocol}）；API key 请在粘贴到客户端后手动填入，不要提交到版本控制。\n`
+  );
 }
 
 async function askRequired(
@@ -61,26 +66,30 @@ async function readPipedAnswers(): Promise<ConfigureAnswers | undefined> {
   if (lines.length < 3) {
     return undefined;
   }
-  const [endpoint, model, apiKey] = lines;
-  return { endpoint, model, apiKey };
+  const [endpoint, model, apiKey, protocol] = lines;
+  return { endpoint, model, apiKey, protocol };
 }
 
-function validate(answers: ConfigureAnswers): { endpoint: string; model: string; apiKey: string } {
+function normalizeProtocol(value: string | undefined): "openai" | "anthropic" {
+  return (value ?? "").trim().toLowerCase() === "anthropic" ? "anthropic" : "openai";
+}
+
+function validate(answers: ConfigureAnswers): { endpoint: string; model: string; apiKey: string; protocol: "openai" | "anthropic" } {
   const endpoint = normalizeEndpointUrl(answers.endpoint);
   const model = answers.model.trim();
   const apiKey = answers.apiKey.trim();
   if (!endpoint) throw new Error("API endpoint cannot be empty");
   if (!model) throw new Error("Model name cannot be empty");
   if (!apiKey) throw new Error("API key cannot be empty");
-  return { endpoint, model, apiKey };
+  return { endpoint, model, apiKey, protocol: normalizeProtocol(answers.protocol) };
 }
 
 export async function runConfigureCli(): Promise<void> {
   const piped = await readPipedAnswers();
   if (piped) {
     // piped 模式仍要求三项齐全以保持契约，但输出片段里 key 只用占位符
-    const { endpoint, model } = validate(piped);
-    printConfigSnippet(endpoint, model);
+    const { endpoint, model, protocol } = validate(piped);
+    printConfigSnippet(endpoint, model, protocol);
     return;
   }
 
@@ -91,8 +100,10 @@ export async function runConfigureCli(): Promise<void> {
     const endpoint = await askRequired(rl, "API endpoint: ");
     const model = await askRequired(rl, "Model name: ");
     const apiKey = await askRequired(rl, "API key: ");
-    const valid = validate({ endpoint, model, apiKey });
-    printConfigSnippet(valid.endpoint, valid.model);
+    const protocolRaw = (await rl.question("Protocol [openai/anthropic] (default openai): ")).trim().toLowerCase();
+    const protocol = normalizeProtocol(protocolRaw || "openai");
+    const valid = validate({ endpoint, model, apiKey, protocol });
+    printConfigSnippet(valid.endpoint, valid.model, protocol);
   } finally {
     rl.close();
   }

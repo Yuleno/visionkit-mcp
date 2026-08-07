@@ -11,6 +11,25 @@ export interface CustomProviderConfig {
   model: string;
 }
 
+/**
+ * 线上协议。由用户通过 VISIONKIT_PROTOCOL 显式声明（默认 openai），不从 URL 推断——
+ * 同一 URL 可能同时支持两种协议（双协议网关），URL 内容无法可靠区分。
+ * - openai: 走 OpenAI Chat Completions，代码补 /chat/completions。
+ * - anthropic: 走 Anthropic Messages，代码补 /v1/messages。
+ */
+export type Protocol = "openai" | "anthropic";
+
+/**
+ * Anthropic 端点的严格度，决定采样参数与 thinking 形态。由用户显式声明（默认 vendor-loose），
+ * 不靠 hostname 探测。
+ *
+ * - vendor-loose: 第三方 Anthropic 兼容端点（百炼/mimo/qwen/glm/…，及任何自建端点）。完整支持
+ *   temperature/top_p/top_k，thinking 接受 {type:"enabled"|"disabled"}。完整复用 OpenAI 路径采样参数。
+ * - strict: 官方 api.anthropic.com + Claude 4.7+/5 系。temperature/top_p/top_k 对非默认值返回 400，
+ *   thinking 为 adaptive-only。省略采样参数与 thinking 字段。
+ */
+export type AnthropicStrictness = "vendor-loose" | "strict";
+
 export interface VisionKitConfig {
   provider: "custom";
   apiKey: string;
@@ -32,6 +51,10 @@ export interface VisionKitConfig {
     ffmpegPath?: string;
     ffprobePath?: string;
   };
+  /** 解析后的线上协议。 */
+  protocol: Protocol;
+  /** 仅 protocol==="anthropic" 时有意义；openai 路径恒为 vendor-loose（不使用）。 */
+  anthropicStrictness: AnthropicStrictness;
 }
 
 export interface CapabilityOverrides {
@@ -72,7 +95,7 @@ const RuntimeConfigSchema = z.object({
   maxTokens: z.coerce.number().int().positive().max(1_000_000).default(8192),
   temperature: z.coerce.number().min(0).max(2).default(0.7),
   topP: z.coerce.number().min(0).max(1).default(0.95),
-  enableThinking: EnvBoolean.default("true"),
+  enableThinking: EnvBoolean.default("false"),
   multiCrop: EnvBoolean.default("true"),
   multiCropMaxTiles: z.coerce.number().int().min(1).max(20).default(5),
   baseVisionPrompt: z.string().optional(),
@@ -129,6 +152,11 @@ export function loadConfig(): VisionKitConfig {
     baseVisionPrompt: process.env.BASE_VISION_PROMPT,
   });
 
+  const protocolRaw = (process.env.VISIONKIT_PROTOCOL ?? "openai").trim().toLowerCase();
+  const protocol: Protocol = protocolRaw === "anthropic" ? "anthropic" : "openai";
+  const strictnessRaw = (process.env.VISIONKIT_ANTHROPIC_STRICTNESS ?? "vendor-loose").trim().toLowerCase();
+  const anthropicStrictness: AnthropicStrictness = strictnessRaw === "strict" ? "strict" : "vendor-loose";
+
   return {
     provider: "custom",
     apiKey: runtime.apiKey,
@@ -148,5 +176,7 @@ export function loadConfig(): VisionKitConfig {
     capabilityOverrides,
     agenticZoom,
     video,
+    protocol,
+    anthropicStrictness,
   };
 }
