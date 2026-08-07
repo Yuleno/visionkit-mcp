@@ -1,6 +1,6 @@
 # VisionKit MCP
 
-开源的视觉 MCP 服务。它把 OpenAI 兼容的视觉模型接入 Claude Code 或其他 MCP 客户端，用于截图、UI、OCR、报错、技术图、图表和本地短视频分析。
+开源的视觉 MCP 服务。它把视觉模型接入 Claude Code 或其他 MCP 客户端，用于截图、UI、OCR、报错、技术图、图表和本地短视频分析。同时支持 **OpenAI 兼容** 与 **Anthropic Messages** 两种协议，可接入任意支持其中一种协议的多模态模型（小米 MiMo、阿里云百炼 Qwen、智谱 GLM、官方 Claude 等）。
 
 ## 通过 npm 使用
 
@@ -11,15 +11,17 @@
 ### 前置要求
 
 - Node.js >= 22.12（建议使用当前 LTS）
-- 支持视觉输入、兼容 OpenAI Chat Completions 的模型 endpoint、API key 与模型名
+- 支持视觉输入、兼容 **OpenAI Chat Completions** 或 **Anthropic Messages** 的模型 endpoint、API key 与模型名
 
 VisionKit 只读取以下三项连接环境变量，并统一使用 `Authorization: Bearer` 鉴权：
 
 | 变量 | 说明 |
 | --- | --- |
 | `VISIONKIT_API_KEY` | 模型服务的 API key |
-| `VISIONKIT_BASE_URL` | OpenAI 兼容 endpoint；通常填到 `.../v1`，也支持完整的 `.../v1/chat/completions` |
+| `VISIONKIT_BASE_URL` | 模型 endpoint。OpenAI 兼容填到 `.../v1`（也支持完整的 `.../v1/chat/completions`）；Anthropic 兼容填到端点根（如百炼 `.../apps/anthropic`、MiMo `.../anthropic`、官方 `https://api.anthropic.com`） |
 | `VISIONKIT_MODEL` | 模型名称 |
+
+协议由 `VISIONKIT_PROTOCOL` 显式声明（默认 `openai`），不从 URL 推断——因为同一个端点可能同时支持两种协议（如双协议网关）。填 Anthropic 兼容端点时设 `VISIONKIT_PROTOCOL=anthropic`。代码只补「协议资源路径」：OpenAI 补 `/chat/completions`，Anthropic 补 `/v1/messages`；版本前缀（`/v1`、`/v4`、`/compatible-mode/v1` 等）由你的 `BASE_URL` 承担，原样保留。
 
 ### Claude Code（Windows）
 
@@ -135,10 +137,12 @@ node .\build\index.js
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
+| `VISIONKIT_PROTOCOL` | `openai` | 线上协议：`openai`（走 `/chat/completions`）/ `anthropic`（走 `/v1/messages`）。不从 URL 推断 |
+| `VISIONKIT_ANTHROPIC_STRICTNESS` | `vendor-loose` | Anthropic 端点严格度：`vendor-loose`（第三方端点，完整发送采样参数与 `thinking:{type:enabled\|disabled}`）/ `strict`（官方 Claude 4.7+/5，省略采样参数与 thinking 字段） |
 | `MAX_TOKENS` | `8192` | 最大生成 token 数 |
 | `TEMPERATURE` | `0.7` | 模型温度 |
 | `TOP_P` | `0.95` | 模型 top-p |
-| `ENABLE_THINKING` | `true` | 是否请求模型思考能力 |
+| `ENABLE_THINKING` | `false` | 是否请求模型思考能力。默认关闭以保证响应速度（qwen3.6-plus 开思考单次约 25s，关闭约 3.5s）；复杂推理任务可设 `true` |
 | `MULTI_CROP` | `true` | 是否为大图生成裁剪图 |
 | `MULTI_CROP_MAX_TILES` | `5` | 原图加裁剪图的最大图片预算 |
 | `BASE_VISION_PROMPT` | 内置默认值 | 自定义基础视觉提示词 |

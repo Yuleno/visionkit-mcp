@@ -1,7 +1,7 @@
 # VisionKit MCP 当前状态
 
 > 当前状态的唯一事实源。阶段、验收结果、已知问题或下一步发生变化时，只更新本文件。
-> 最近更新：2026-07-21。
+> 最近更新：2026-08-05。
 
 ## 当前阶段
 
@@ -16,6 +16,7 @@
 - 期7 custom-only 收敛完成：产品入口改为 `VISIONKIT_API_KEY` / `VISIONKIT_BASE_URL` / `VISIONKIT_MODEL` 三件套，统一 Bearer；configure 打印配置片段不落盘。
 - 期8（v1.6.0）实现完成：图片管线拆分为 source/transform/crop/cache/prepare 五个职责模块；删除五个 dormant provider、旧 `analyzeImage`、过渡导出和遗留供应商脚本；运行配置统一经 Zod 校验；服务版本读取 `package.json`；GitHub npx 固定版本标签；新增真实 stdio MCP 冒烟与构建前清理。
 - 期8.1（v1.6.1）公共分发：GitHub 用户名统一为 `Yuleno`，npm 公共包成为主安装路径，GitHub npx 保留为备用；补齐 MIT LICENSE、第三方代码归属与 npm 发布保护。
+- Anthropic Messages 协议支持完成：在 custom-only 架构内并行支持 OpenAI 兼容与 Anthropic Messages 两种协议，工具层零改动。新增 `VISIONKIT_PROTOCOL`（auto/openai/anthropic，默认 auto，按 base_url 自动探测）与 `VISIONKIT_ANTHROPIC_STRICTNESS`（vendor-loose/strict）。`AnthropicClient` 通用支持任意 Anthropic 兼容端点 + 多模态模型（阿里云百炼 qwen3.6-plus、小米 MiMo、官方 Claude 等）：vendor-loose 端点完整复用 OpenAI 路径的 temperature/top_p + thinking enabled/disabled（保证质量不回退），strict（官方 Claude 4.7+/5）省略采样参数与 thinking 字段。
 
 ## 已验证状态
 
@@ -37,6 +38,9 @@
 - 修复 capability override 空值覆盖：未设置 `VISIONKIT_MAX_IMAGES` 等变量时不再以 `undefined` 覆盖模型 profile；mimo-v2.5 的运行时 `maxImages` 已恢复为5。
 - 期5视频真实验收：FFmpeg 8.1.2从6.2秒合成视频均匀抽取5帧，mimo-v2.5准确输出红→绿→蓝时间线；`detailProfile=video`、`rounds=1`，仅产生1次API调用。
 - 期5.1真实验收：8.3秒合成视频在2.0～2.25秒短暂出现黄色，5个均匀点全部漏过；智能采样从7个候选保留 `0.835s红/2.1s黄/2.35s红` 3帧，mimo-v2.5准确输出红→黄→红，仍只调用1次API。
+- Anthropic 协议真实验收（百炼 qwen3.6-plus，`VISIONKIT_BASE_URL=https://dashscope.aliyuncs.com/apps/anthropic`，auto 探测为 anthropic+vendor-loose）：`npm run typecheck` 通过、19个测试文件/137个用例通过、`npm run build` 通过、`npm run test:smoke` 握手 1.6.1 / 8 工具通过。`npm run test:anthropic-mcp` 用 sharp 生成的 64×64 合成图，真实调用 7 个图片工具全部成功，模型准确识别纯色主色调与色值、正确判断无文字/无差异。A/B 对照（同一张蓝色合成图）：OpenAI 路径（compatible-mode）与 Anthropic 路径（apps/anthropic）对同一张图色值估计一致（均约 #2668C9），输出结构一致，证明双协议并存无质量回退。
+- Anthropic 路径延迟优化（联网调研 + 实测对照后落地）：`ENABLE_THINKING` 默认从 `true` 改为 `false`（qwen3.6-plus 默认思考预算高达 81920 token，开思考单次约 25s、关闭约 3.5s，实测 OCR 关思考输出反而更完整）；AnthropicClient 改流式拉取（`stream:true` + SSE 累积成与非流式等价结构），降低首 token 等待并避免长请求超时。优化后实测：默认配置（thinking 关 + 流式）单次 image_analysis 约 2.5s（优化前约 40s，提升约 16 倍）；即使显式开 thinking 也从 25s 降到约 6s。用户需复杂推理时可设 `ENABLE_THINKING=true`。流式改造通过 base-client 新增 `sendRequest` 钩子实现，OpenAI 路径行为不变。
+- URL 归一化通用化重构（联网调研国内主流厂商后落地）：废除 hostname 白名单（`detectProtocol`/`detectStrictness`/`looksAnthropic` 全删），协议与严格度改为用户显式声明——`VISIONKIT_PROTOCOL`（默认 `openai`）、`VISIONKIT_ANTHROPIC_STRICTNESS`（默认 `vendor-loose`），均不从 URL 推断。归一化收敛为统一函数 `resolveEndpoint(rawBaseUrl, protocol)`，一条铁律：**代码只补协议资源路径（OpenAI `/chat/completions`、Anthropic `/v1/messages`），绝不补版本前缀**——版本前缀（`/v1`、`/v4`、`/compatible-mode/v1` 等）一律视为 base_url 的一部分原样保留。实测覆盖小米 MiMo、Kimi、DeepSeek、智谱（3 端点）、百炼（2 端点）、火山方舟、百度千帆、阶跃、自建 `evo4.local` 共 ~20 个真实端点，零厂商特判。
 - 视觉模型探索性对照：使用4组本地样本同图同提示词比较 VisionKit（mimo-v2.5）与智谱官方 MCP（GLM-4.6V）；两者在 OCR、技术图和报错诊断上均完成核心任务，UI diff 均有漏检或误判。VisionKit 本轮平均约10.0秒，智谱官方约50.2秒；样本量不足以得出模型全面优劣结论，详见 `docs/QUALITY_BENCHMARK.md`。
 - 期6复测：强化证据约束后，当前4 case manifest 中 VisionKit 关键事实平均召回为100%、格式遵从4/4、无依据命中0；智谱官方为68.75%、格式遵从0/4、无依据命中2。该分数只对 manifest 已声明事实有效，不能外推为模型全面优劣。
 - GitHub Actions CI已加入 Node 22 的 Ubuntu/Windows矩阵；checkout/setup-node v5复验后两端均通过，无旧Node运行时弃用警告。
@@ -48,10 +52,11 @@
 - 旧的开发期连接 profile（项目内 `.visionkit-mcp/config.json`）与 `VISIONKIT_CONFIG_FILE` 已随 custom-only 收敛移除。
 - v1.6.1 起优先通过 npm 固定版本安装；GitHub npx 仅作为备用，npm 12 使用 Git 依赖时需显式启用 `allow-git`。
 - 真实模型调用会消耗 API，执行前必须获得用户确认。
+- Anthropic 协议：协议默认 `auto` 探测（base_url 命中 `api.anthropic.com`、`/apps/anthropic`、`xiaomimimo.com/anthropic` 走 anthropic，否则 openai），可用 `VISIONKIT_PROTOCOL` 显式指定。Anthropic 端点严格度默认按 host 探测（官方→strict，第三方→vendor-loose），可用 `VISIONKIT_ANTHROPIC_STRICTNESS` 覆盖。
 
 ## 期3实现与验证边界
 
-- Provider 只保留 `BaseVisionClient` + `CustomClient`：统一图片数预检、system prompt、响应解析、错误脱敏和 OpenAI 兼容 transport。
+- Provider 保留 `BaseVisionClient` + `CustomClient`（OpenAI 兼容）+ `AnthropicClient`（Anthropic Messages）：统一图片数预检、日志、错误脱敏共享；请求/响应构造按协议覆写。工具层只依赖 `VisionClient.analyze()` 契约，不感知协议。
 - 明确区分环境变量中的连接配置与代码内 capability profile；项目不保存连接 profile。
 - 工具层只使用 `VisionClient.analyze({ images, systemPrompt, userPrompt, thinking })`。
 - 已修复 `assertPathInAllowedDirs` 的同级路径前缀绕过，改用 `path.relative` 判断并补了 Windows/Posix 回归测试。
@@ -68,6 +73,7 @@
 2. 基于基准结果继续强化专项工具的证据约束；UI diff 后续可评估低成本像素热区辅助，但不提前引入通用组件检测。
 3. 当前保持 Zoom 默认关闭；动态裁剪链路已 live 通过，只有在扩展基准中稳定提高细节召回后才考虑默认开启。
 4. 暂不扩展 clipboard/latest、grounding、音频、长视频、远程视频或 Provider 自动路由；未来恢复内置 provider 时重新建立实现与 live-probe 兼容性矩阵。
+5. Anthropic 协议后续：在小米 MiMo、智谱等其他 Anthropic 兼容端点上补充真实验收样本；评估长输出工具（ui_to_artifact_code/extract_text）在开思考时的等长输出对照；考虑对密集视觉任务提供 thinking 开关的细粒度 profile。
 
 ## 文档入口
 
