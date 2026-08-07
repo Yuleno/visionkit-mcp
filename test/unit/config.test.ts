@@ -59,27 +59,52 @@ describe("运行配置", () => {
     expect(() => loadConfig()).toThrow(/VISIONKIT_API_KEY is required/);
   });
 
-  describe("protocol 与端点严格度（显式声明，不从 URL 推断）", () => {
-    it("默认 protocol=openai、anthropicStrictness=vendor-loose", () => {
+  describe("protocol 与端点严格度（显式优先 + 路径信号兜底）", () => {
+    it("默认 protocol=openai、anthropicStrictness=vendor-loose（无路径信号时）", () => {
       setRequiredEnv();
+      process.env.VISIONKIT_BASE_URL = "https://api.example.com/v1";
       const cfg = loadConfig();
       expect(cfg.protocol).toBe("openai");
       expect(cfg.anthropicStrictness).toBe("vendor-loose");
     });
 
-    it("显式 openai/anthropic 直接生效，与 base_url 无关", () => {
+    it("显式 openai/anthropic 最高优先，覆盖路径信号", () => {
       setRequiredEnv();
-      // 同一个双协议 URL，协议完全由 env 决定
+      // 路径含 /anthropic 但显式 openai → openai
+      process.env.VISIONKIT_BASE_URL = "https://dashscope.aliyuncs.com/apps/anthropic";
+      process.env.VISIONKIT_PROTOCOL = "openai";
+      expect(loadConfig().protocol).toBe("openai");
+      // 纯 host 但显式 anthropic → anthropic
       process.env.VISIONKIT_BASE_URL = "http://evo4.local:20128";
       process.env.VISIONKIT_PROTOCOL = "anthropic";
       expect(loadConfig().protocol).toBe("anthropic");
-      process.env.VISIONKIT_PROTOCOL = "openai";
+    });
+
+    it("base_url 路径含 /anthropic 段 → 未声明协议时默认 anthropic", () => {
+      setRequiredEnv();
+      process.env.VISIONKIT_BASE_URL = "https://dashscope.aliyuncs.com/apps/anthropic";
+      expect(loadConfig().protocol).toBe("anthropic");
+      process.env.VISIONKIT_BASE_URL = "https://api.xiaomimimo.com/anthropic";
+      expect(loadConfig().protocol).toBe("anthropic");
+      process.env.VISIONKIT_BASE_URL = "https://open.bigmodel.cn/api/anthropic";
+      expect(loadConfig().protocol).toBe("anthropic");
+    });
+
+    it("hostname 为 api.anthropic.com → 未声明协议时默认 anthropic", () => {
+      setRequiredEnv();
+      process.env.VISIONKIT_BASE_URL = "https://api.anthropic.com";
+      expect(loadConfig().protocol).toBe("anthropic");
+    });
+
+    it("路径段子串 anthropic-bridge 不误判为 anthropic", () => {
+      setRequiredEnv();
+      process.env.VISIONKIT_BASE_URL = "https://gateway.example.com/anthropic-bridge/v1";
       expect(loadConfig().protocol).toBe("openai");
     });
 
-    it("base_url 含 /anthropic 但未声明 protocol → 仍为 openai（不推断）", () => {
+    it("普通 OpenAI 兼容端点未声明协议 → openai", () => {
       setRequiredEnv();
-      process.env.VISIONKIT_BASE_URL = "https://dashscope.aliyuncs.com/apps/anthropic";
+      process.env.VISIONKIT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
       expect(loadConfig().protocol).toBe("openai");
     });
 

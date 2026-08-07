@@ -125,6 +125,30 @@ function loadCapabilityOverrides(env: NodeJS.ProcessEnv): CapabilityOverrides {
 /**
  * 从环境变量加载配置（custom-only）
  */
+/**
+ * 解析线上协议。优先级：显式 VISIONKIT_PROTOCOL > base_url 路径信号 > 默认 openai。
+ *
+ * base_url 路径信号（用户写在 URL 里的声明，非猜测）：
+ * - hostname 为 api.anthropic.com，或路径精确含 /anthropic 段（百炼 /apps/anthropic、
+ *   小米 /anthropic、智谱 /api/anthropic 等）→ anthropic。
+ * - 精确路径段匹配，不匹配子串（/anthropic-bridge 不命中）。
+ * 显式 VISIONKIT_PROTOCOL 始终最高优先，可覆盖路径信号。
+ */
+function resolveProtocol(raw: string | undefined, baseUrl: string): Protocol {
+  const explicit = (raw ?? "").trim().toLowerCase();
+  if (explicit === "anthropic") return "anthropic";
+  if (explicit === "openai") return "openai";
+  try {
+    const url = new URL(baseUrl);
+    if (url.hostname.toLowerCase() === "api.anthropic.com") return "anthropic";
+    const segments = url.pathname.split("/").filter(Boolean).map((s) => s.toLowerCase());
+    if (segments.includes("anthropic")) return "anthropic";
+  } catch {
+    // URL 解析失败时回退默认 openai
+  }
+  return "openai";
+}
+
 export function loadConfig(): VisionKitConfig {
   const capabilityOverrides = loadCapabilityOverrides(process.env);
   const agenticZoom = AgenticZoomSchema.parse({
@@ -152,8 +176,7 @@ export function loadConfig(): VisionKitConfig {
     baseVisionPrompt: process.env.BASE_VISION_PROMPT,
   });
 
-  const protocolRaw = (process.env.VISIONKIT_PROTOCOL ?? "openai").trim().toLowerCase();
-  const protocol: Protocol = protocolRaw === "anthropic" ? "anthropic" : "openai";
+  const protocol = resolveProtocol(process.env.VISIONKIT_PROTOCOL, runtime.baseUrl);
   const strictnessRaw = (process.env.VISIONKIT_ANTHROPIC_STRICTNESS ?? "vendor-loose").trim().toLowerCase();
   const anthropicStrictness: AnthropicStrictness = strictnessRaw === "strict" ? "strict" : "vendor-loose";
 

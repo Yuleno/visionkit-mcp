@@ -21,7 +21,7 @@ VisionKit 只读取以下三项连接环境变量，并统一使用 `Authorizati
 | `VISIONKIT_BASE_URL` | 模型 endpoint。OpenAI 兼容填到 `.../v1`（也支持完整的 `.../v1/chat/completions`）；Anthropic 兼容填到端点根（如百炼 `.../apps/anthropic`、MiMo `.../anthropic`、官方 `https://api.anthropic.com`） |
 | `VISIONKIT_MODEL` | 模型名称 |
 
-协议由 `VISIONKIT_PROTOCOL` 显式声明（默认 `openai`），不从 URL 推断——因为同一个端点可能同时支持两种协议（如双协议网关）。填 Anthropic 兼容端点时设 `VISIONKIT_PROTOCOL=anthropic`。代码只补「协议资源路径」：OpenAI 补 `/chat/completions`，Anthropic 补 `/v1/messages`；版本前缀（`/v1`、`/v4`、`/compatible-mode/v1` 等）由你的 `BASE_URL` 承担，原样保留。
+协议由 `VISIONKIT_PROTOCOL` 显式声明（默认 `openai`）。未显式声明时，按 base_url 路径信号兜底：路径精确含 `/anthropic` 段（百炼 `/apps/anthropic`、小米 `/anthropic`、智谱 `/api/anthropic` 等）或 hostname 为 `api.anthropic.com` → 自动走 Anthropic；否则走 OpenAI。显式 `VISIONKIT_PROTOCOL` 始终最高优先，可覆盖路径信号（如双协议网关同 URL 下需要强制指定时）。代码只补「协议资源路径」：OpenAI 补 `/chat/completions`，Anthropic 补 `/v1/messages`；版本前缀（`/v1`、`/v4`、`/compatible-mode/v1` 等）由你的 `BASE_URL` 承担，原样保留。
 
 ### Claude Code（Windows）
 
