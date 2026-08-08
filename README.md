@@ -4,7 +4,7 @@
 
 ## 通过 npm 使用
 
-推荐由 MCP 客户端通过 npm 拉取固定版本 `visionkit-mcp@1.6.1`。固定版本可避免上游更新影响现有配置；需要跟随最新版时可改用 `visionkit-mcp@latest`。
+推荐由 MCP 客户端通过 npm 拉取固定版本 `visionkit-mcp@1.7.0`。固定版本可避免上游更新影响现有配置；需要跟随最新版时可改用 `visionkit-mcp@latest`。
 
 ## 配置
 
@@ -30,13 +30,13 @@ VisionKit 只读取以下三项连接环境变量，并统一使用 `Authorizati
 **用户级**：本机所有 Claude Code 项目可用。
 
 ```powershell
-claude mcp add visionkit-mcp --scope user --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.6.1
+claude mcp add visionkit-mcp --scope user --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.7.0
 ```
 
 **项目级**：只在当前项目可用。
 
 ```powershell
-claude mcp add visionkit-mcp --scope project --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.6.1
+claude mcp add visionkit-mcp --scope project --env VISIONKIT_API_KEY=YOUR_API_KEY --env VISIONKIT_BASE_URL=https://your-provider.example/v1 --env VISIONKIT_MODEL=your-model -- cmd /c npx -y visionkit-mcp@1.7.0
 ```
 
 项目级配置会将 API key 写入项目的 `.mcp.json`。确认该文件已被忽略，且不要提交或分享包含真实 key 的配置。
@@ -50,7 +50,7 @@ claude mcp add visionkit-mcp --scope user \
   --env VISIONKIT_API_KEY=YOUR_API_KEY \
   --env VISIONKIT_BASE_URL=https://your-provider.example/v1 \
   --env VISIONKIT_MODEL=your-model \
-  -- npx -y visionkit-mcp@1.6.1
+  -- npx -y visionkit-mcp@1.7.0
 ```
 
 项目级配置只需将 `--scope user` 改为 `--scope project`。
@@ -65,7 +65,7 @@ claude mcp add visionkit-mcp --scope user \
     "visionkit-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "visionkit-mcp@1.6.1"],
+      "args": ["-y", "visionkit-mcp@1.7.0"],
       "env": {
         "VISIONKIT_API_KEY": "YOUR_API_KEY",
         "VISIONKIT_BASE_URL": "https://your-provider.example/v1",
@@ -76,11 +76,11 @@ claude mcp add visionkit-mcp --scope user \
 }
 ```
 
-原生 Windows 客户端请把 `command` 改为 `cmd`，并把 `args` 改为 `["/c", "npx", "-y", "visionkit-mcp@1.6.1"]`。
+原生 Windows 客户端请把 `command` 改为 `cmd`，并把 `args` 改为 `["/c", "npx", "-y", "visionkit-mcp@1.7.0"]`。
 
 ### GitHub npx（备用）
 
-需要直接使用 GitHub 标签时，可运行 `npx -y github:Yuleno/visionkit-mcp#v1.6.1`。npm 12 默认禁止 Git 依赖，需要显式改为 `npx --allow-git=all -y github:Yuleno/visionkit-mcp#v1.6.1`；因此日常使用优先选择 npm 包。
+需要直接使用 GitHub 标签时，可运行 `npx -y github:Yuleno/visionkit-mcp#v1.7.0`。npm 12 默认禁止 Git 依赖，需要显式改为 `npx --allow-git=all -y github:Yuleno/visionkit-mcp#v1.7.0`；因此日常使用优先选择 npm 包。
 
 ### 生成配置片段（可选）
 

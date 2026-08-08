@@ -1,6 +1,6 @@
 {
   "name": "visionkit-mcp",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Vision MCP server (OpenAI & Anthropic compatible) for screenshot, UI, OCR and short-video analysis.",
   "type": "module",
   "files": [
