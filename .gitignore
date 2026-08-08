@@ -28,3 +28,7 @@ imageTest/
 
 # 开发过程文档（subagent brief/report 等本地过程记录，不随仓库分发）
 .superpowers/
+
+# 本地 agent 协作约定（AGENTS.md 为实体、CLAUDE.md 为其软链接），仅本地维护
+AGENTS.md
+CLAUDE.md
