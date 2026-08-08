@@ -1,7 +1,5 @@
 import type { VisionKitConfig } from "../config.js";
-import { resolveCapabilities } from "./capabilities.js";
-import { BaseVisionClient, type HttpClientFactory, type TransportConfig } from "./base-client.js";
-import { resolveEndpoint } from "./request-path.js";
+import { BaseVisionClient, resolveCustomTransport, type HttpClientFactory } from "./base-client.js";
 
 const CUSTOM_TIMEOUT_MS = 60_000;
 
@@ -9,27 +7,8 @@ export class CustomClient extends BaseVisionClient {
   readonly name = "Custom";
 
   constructor(config: VisionKitConfig, httpFactory?: HttpClientFactory) {
-    if (!config.customProvider) {
-      throw new Error(
-        "CustomClient requires customProvider configuration. Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL environment variables."
-      );
-    }
-    const { baseURL, requestPath } = resolveEndpoint(config.customProvider.baseUrl, "openai");
-    const transport: TransportConfig = {
-      baseUrl: baseURL,
-      requestPath,
-      timeoutMs: CUSTOM_TIMEOUT_MS,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.customProvider.apiKey}`,
-      },
-    };
-    super(
-      config,
-      transport,
-      resolveCapabilities("custom", config.customProvider.model, config.capabilityOverrides),
-      httpFactory
-    );
+    const { transport, capabilities } = resolveCustomTransport(config, "openai", { timeoutMs: CUSTOM_TIMEOUT_MS });
+    super(config, transport, capabilities, httpFactory);
   }
 
   protected applyThinking(_body: Record<string, unknown>, thinking: boolean | undefined): string[] {

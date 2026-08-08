@@ -1,6 +1,7 @@
 import { createInterface } from "readline/promises";
 import { stdin as defaultInput, stdout as defaultOutput } from "process";
 import { pathToFileURL } from "url";
+import { trimTrailingSlashes } from "./utils/helpers.js";
 import { GITHUB_NPX_SPEC } from "./version.js";
 
 interface ConfigureAnswers {
@@ -11,7 +12,7 @@ interface ConfigureAnswers {
 }
 
 function normalizeEndpointUrl(endpoint: string): string {
-  return endpoint.trim().replace(/\/+$/, "");
+  return trimTrailingSlashes(endpoint);
 }
 
 /** 打印一段可直接粘贴到 MCP 客户端的 stdio 配置片段；key 用占位符，真实 key 不进 stdout。 */
@@ -100,10 +101,9 @@ export async function runConfigureCli(): Promise<void> {
     const endpoint = await askRequired(rl, "API endpoint: ");
     const model = await askRequired(rl, "Model name: ");
     const apiKey = await askRequired(rl, "API key: ");
-    const protocolRaw = (await rl.question("Protocol [openai/anthropic] (default openai): ")).trim().toLowerCase();
-    const protocol = normalizeProtocol(protocolRaw || "openai");
-    const valid = validate({ endpoint, model, apiKey, protocol });
-    printConfigSnippet(valid.endpoint, valid.model, protocol);
+    const protocolRaw = await rl.question("Protocol [openai/anthropic] (default openai): ");
+    const valid = validate({ endpoint, model, apiKey, protocol: protocolRaw });
+    printConfigSnippet(valid.endpoint, valid.model, valid.protocol);
   } finally {
     rl.close();
   }

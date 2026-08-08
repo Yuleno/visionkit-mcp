@@ -1,7 +1,5 @@
 import type { VisionKitConfig } from "../config.js";
-import { resolveCapabilities } from "./capabilities.js";
-import { BaseVisionClient, type HttpClientFactory, type TransportConfig } from "./base-client.js";
-import { resolveEndpoint } from "./request-path.js";
+import { BaseVisionClient, resolveCustomTransport, type HttpClientFactory } from "./base-client.js";
 import { buildAnthropicImageContent } from "./vision-client.js";
 import { redactSensitiveText } from "../utils/logger.js";
 
@@ -32,28 +30,11 @@ export class AnthropicClient extends BaseVisionClient {
   private readonly strictness: "vendor-loose" | "strict";
 
   constructor(config: VisionKitConfig, httpFactory?: HttpClientFactory) {
-    if (!config.customProvider) {
-      throw new Error(
-        "AnthropicClient requires customProvider configuration. Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL environment variables."
-      );
-    }
-    const { baseURL, requestPath } = resolveEndpoint(config.customProvider.baseUrl, "anthropic");
-    const transport: TransportConfig = {
-      baseUrl: baseURL,
-      requestPath,
+    const { transport, capabilities } = resolveCustomTransport(config, "anthropic", {
       timeoutMs: ANTHROPIC_TIMEOUT_MS,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.customProvider.apiKey}`,
-        "anthropic-version": ANTHROPIC_VERSION,
-      },
-    };
-    super(
-      config,
-      transport,
-      resolveCapabilities("custom", config.customProvider.model, config.capabilityOverrides),
-      httpFactory
-    );
+      extraHeaders: { "anthropic-version": ANTHROPIC_VERSION },
+    });
+    super(config, transport, capabilities, httpFactory);
     this.strictness = config.anthropicStrictness;
   }
 
@@ -64,12 +45,8 @@ export class AnthropicClient extends BaseVisionClient {
     const warnings: string[] = [];
     const isStrict = this.strictness === "strict";
 
-    // systemPromptMode 保持 flag 语义（协议无关）。
-    const useNativeSystem = this.capabilities.systemPromptMode === "native";
-    const userPrompt =
-      !useNativeSystem && request.systemPrompt
-        ? `${request.systemPrompt}\n\n${request.userPrompt}`
-        : request.userPrompt;
+    // systemPromptMode 保持 flag 语义（协议无关，复用基类解析）。
+    const { system, userPrompt } = this.resolveSystemPrompt(request);
 
     const body: Record<string, unknown> = {
       model: this.model,
@@ -86,8 +63,8 @@ export class AnthropicClient extends BaseVisionClient {
       ],
     };
 
-    if (useNativeSystem && request.systemPrompt) {
-      body.system = request.systemPrompt;
+    if (system) {
+      body.system = system;
     }
 
     if (isStrict) {
@@ -183,14 +160,15 @@ interface AccumulatedMessage {
 async function consumeAnthropicStream(stream: AsyncIterable<Buffer> & { on?: (e: string, cb: (d: Buffer) => void) => void }): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     const message: AccumulatedMessage = { content: [] };
-    let textBlocks: Record<number, AnthropicTextBlock> = {};
-    let otherBlocks: Record<number, AnthropicOtherBlock> = {};
+    const blocks: Record<number, AnthropicBlock> = {};
     let buffer = "";
 
     const finish = () => {
-      const indices = [...Object.keys(textBlocks).map(Number), ...Object.keys(otherBlocks).map(Number)]
-        .sort((a, b) => a - b);
-      message.content = indices.map((i) => textBlocks[i] ?? otherBlocks[i]).filter(Boolean);
+      message.content = Object.keys(blocks)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .map((i) => blocks[i])
+        .filter(Boolean);
       resolve(message);
     };
 
@@ -213,19 +191,14 @@ async function consumeAnthropicStream(stream: AsyncIterable<Buffer> & { on?: (e:
         case "content_block_start": {
           const idx = (event as { index?: number }).index ?? 0;
           const block = (event as { content_block?: { type?: string; text?: string } }).content_block;
-          if (!block) break;
-          if (block.type === "text") {
-            textBlocks[idx] = { type: "text", text: block.text ?? "" };
-          } else if (block.type) {
-            otherBlocks[idx] = { type: block.type, ...(block as Record<string, unknown>) };
-          }
+          if (block?.type) blocks[idx] = block as AnthropicBlock;
           break;
         }
         case "content_block_delta": {
           const idx = (event as { index?: number }).index ?? 0;
           const delta = (event as { delta?: { type?: string; text?: string } }).delta;
-          if (delta?.type === "text_delta" && typeof delta.text === "string" && textBlocks[idx]) {
-            textBlocks[idx].text += delta.text;
+          if (delta?.type === "text_delta" && typeof delta.text === "string" && blocks[idx]?.type === "text") {
+            (blocks[idx] as AnthropicTextBlock).text += delta.text;
           }
           break;
         }

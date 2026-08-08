@@ -3,6 +3,11 @@
  */
 import axios from "axios";
 
+/** 去掉字符串首尾空白与尾部所有斜杠（URL base 归一化常用）。 */
+export function trimTrailingSlashes(value: string): string {
+  return value.trim().replace(/\/+$/, "");
+}
+
 /**
  * 带重试机制的异步函数包装器
  * - 4xx 客户端错误直接抛出，不重试

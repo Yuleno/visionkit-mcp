@@ -1,7 +1,10 @@
 import axios, { type AxiosInstance } from "axios";
-import type { VisionKitConfig } from "../config.js";
+import type { VisionKitConfig, Protocol } from "../config.js";
 import { logger, redactSensitiveText } from "../utils/logger.js";
+import { trimTrailingSlashes } from "../utils/helpers.js";
 import { buildImageContent, type Capabilities, type VisionClient, type VisionRequest, type VisionResult } from "./vision-client.js";
+import { resolveEndpoint } from "./request-path.js";
+import { resolveCapabilities } from "./capabilities.js";
 
 export interface TransportConfig {
   baseUrl: string;
@@ -10,12 +13,41 @@ export interface TransportConfig {
   headers: Record<string, string>;
 }
 
+/**
+ * 由子类共享的 transport + capabilities 组装：守卫 customProvider、归一化端点、
+ * 组装 Bearer 基线头。子类只传协议差异（超时、额外头）。
+ */
+export function resolveCustomTransport(
+  config: VisionKitConfig,
+  protocol: Protocol,
+  options: { timeoutMs: number; extraHeaders?: Record<string, string> }
+): { transport: TransportConfig; capabilities: Capabilities } {
+  if (!config.customProvider) {
+    throw new Error(
+      "Vision client requires customProvider configuration. Set VISIONKIT_BASE_URL / VISIONKIT_API_KEY / VISIONKIT_MODEL environment variables."
+    );
+  }
+  const { baseURL, requestPath } = resolveEndpoint(config.customProvider.baseUrl, protocol);
+  const transport: TransportConfig = {
+    baseUrl: baseURL,
+    requestPath,
+    timeoutMs: options.timeoutMs,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.customProvider.apiKey}`,
+      ...options.extraHeaders,
+    },
+  };
+  const capabilities = resolveCapabilities("custom", config.customProvider.model, config.capabilityOverrides);
+  return { transport, capabilities };
+}
+
 export type HttpClient = Pick<AxiosInstance, "post">;
 export type HttpClientFactory = (transport: TransportConfig) => HttpClient;
 
 export const createAxiosHttpClient: HttpClientFactory = (transport) =>
   axios.create({
-    baseURL: transport.baseUrl.replace(/\/+$/, ""),
+    baseURL: trimTrailingSlashes(transport.baseUrl),
     timeout: transport.timeoutMs,
     headers: transport.headers,
   });
@@ -89,13 +121,24 @@ export abstract class BaseVisionClient implements VisionClient {
     return { body, warnings: this.applyThinking(body, request.thinking) };
   }
 
+  /**
+   * 按 systemPromptMode 解析出协议中立的 system 文本与 user prompt。
+   * - native：system 独立、userPrompt 原样
+   * - merge_user：system 为空、systemPrompt 前缀拼进 userPrompt
+   * 子类据此渲染到各自协议字段（OpenAI system message / Anthropic 顶层 system）。
+   */
+  protected resolveSystemPrompt(request: VisionRequest): { system: string | undefined; userPrompt: string } {
+    if (this.capabilities.systemPromptMode === "merge_user" && request.systemPrompt) {
+      return { system: undefined, userPrompt: `${request.systemPrompt}\n\n${request.userPrompt}` };
+    }
+    return { system: request.systemPrompt, userPrompt: request.userPrompt };
+  }
+
   protected buildMessages(request: VisionRequest) {
-    const userPrompt = this.capabilities.systemPromptMode === "merge_user" && request.systemPrompt
-      ? `${request.systemPrompt}\n\n${request.userPrompt}`
-      : request.userPrompt;
+    const { system, userPrompt } = this.resolveSystemPrompt(request);
     const messages: Array<Record<string, unknown>> = [];
-    if (this.capabilities.systemPromptMode === "native" && request.systemPrompt) {
-      messages.push({ role: "system", content: request.systemPrompt });
+    if (system) {
+      messages.push({ role: "system", content: system });
     }
     messages.push({
       role: "user",

@@ -12,19 +12,16 @@
  * 唯一需要特判的版本段是 Anthropic 末尾的精确 /v1（防 /v1/v1/messages 双重路径）。
  */
 
+import type { Protocol } from "../config.js";
+import { trimTrailingSlashes } from "../utils/helpers.js";
+
 export interface NormalizedEndpoint {
   baseURL: string;
   requestPath: string;
 }
 
-export type Protocol = "openai" | "anthropic";
-
 const OPENAI_RESOURCE = "/chat/completions";
 const ANTHROPIC_RESOURCE = "/v1/messages";
-
-function trimTrailingSlashes(value: string): string {
-  return value.trim().replace(/\/+$/, "");
-}
 
 function stripSuffix(value: string, suffix: string): string {
   return trimTrailingSlashes(value.slice(0, -suffix.length));
@@ -38,22 +35,15 @@ function stripSuffix(value: string, suffix: string): string {
  *   否则 baseURL 原样、补 /v1/messages。
  */
 export function resolveEndpoint(rawBaseUrl: string, protocol: Protocol): NormalizedEndpoint {
+  const resource = protocol === "openai" ? OPENAI_RESOURCE : ANTHROPIC_RESOURCE;
   const trimmed = trimTrailingSlashes(rawBaseUrl);
 
-  if (protocol === "openai") {
-    if (trimmed.toLowerCase().endsWith(OPENAI_RESOURCE.toLowerCase())) {
-      return { baseURL: stripSuffix(trimmed, OPENAI_RESOURCE), requestPath: OPENAI_RESOURCE };
-    }
-    return { baseURL: trimmed, requestPath: OPENAI_RESOURCE };
+  if (trimmed.toLowerCase().endsWith(resource.toLowerCase())) {
+    return { baseURL: stripSuffix(trimmed, resource), requestPath: resource };
   }
-
-  // protocol === "anthropic"
-  if (trimmed.endsWith(ANTHROPIC_RESOURCE)) {
-    return { baseURL: stripSuffix(trimmed, ANTHROPIC_RESOURCE), requestPath: ANTHROPIC_RESOURCE };
+  // Anthropic 特例：末尾精确 /v1（非 /v11）→ 剥掉再补 /v1/messages，防 /v1/v1/messages。
+  if (protocol === "anthropic" && /\/v1$/.test(trimmed)) {
+    return { baseURL: trimTrailingSlashes(trimmed.replace(/\/v1$/, "")), requestPath: ANTHROPIC_RESOURCE };
   }
-  // 末尾精确 /v1（不误伤 /v11 /v12）→ 剥掉再补 /v1/messages，防 /v1/v1/messages。
-  if (/\/v1$/.test(trimmed)) {
-    return { baseURL: trimmed.replace(/\/v1$/, "").replace(/\/+$/, ""), requestPath: ANTHROPIC_RESOURCE };
-  }
-  return { baseURL: trimmed, requestPath: ANTHROPIC_RESOURCE };
+  return { baseURL: trimmed, requestPath: resource };
 }
