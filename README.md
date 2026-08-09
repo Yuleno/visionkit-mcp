@@ -194,4 +194,4 @@ npm run test:phase5-smart
 
 ## 许可证与致谢
 
-VisionKit MCP 采用 MIT 许可证，详见 [LICENSE](./LICENSE)。本项目包含并修改了 [luma-mcp](https://github.com/JochenYang/luma-mcp) 的部分代码；Agentic Zoom 与部分专项工具设计参考了 [vision-mcp](https://github.com/Pelican0126/vision-mcp)，当前未声明直接包含其代码。完整归属说明见 [NOTICE](./NOTICE)。
+VisionKit MCP 采用 MIT 许可证，详见 [LICENSE](./LICENSE)。本项目包含并修改了 [luma-mcp](https://github.com/JochenYang/luma-mcp) 的部分代码；本项目 Agentic Zoom 的设计参考了 [vision-mcp](https://github.com/Pelican0126/vision-mcp)。完整第三方代码归属说明见 [NOTICE](./NOTICE)。
